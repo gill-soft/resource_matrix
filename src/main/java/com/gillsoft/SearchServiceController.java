@@ -2,6 +2,7 @@ package com.gillsoft;
 
 import java.math.BigDecimal;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
@@ -37,6 +38,8 @@ import com.gillsoft.model.Route;
 import com.gillsoft.model.RoutePoint;
 import com.gillsoft.model.RouteType;
 import com.gillsoft.model.Seat;
+import com.gillsoft.model.SeatStatus;
+import com.gillsoft.model.SeatType;
 import com.gillsoft.model.SeatsScheme;
 import com.gillsoft.model.Segment;
 import com.gillsoft.model.SimpleTripSearchPackage;
@@ -298,14 +301,77 @@ public class SearchServiceController extends SimpleAbstractTripSearchService<Sim
 
 	@Override
 	public SeatsScheme getSeatsSchemeResponse(String tripId) {
-		// TODO Auto-generated method stub
-		return null;
+		TripIdModel idModel = new TripIdModel().create(tripId);
+		try {
+			List<List<com.gillsoft.client.Seat>> seatsMap = client.getSeatsMap(idModel.getIntervalId());
+			SeatsScheme seatsScheme = new SeatsScheme();
+			seatsScheme.setScheme(new HashMap<>());
+			
+			// список ид мест
+			// первый list строки, второй - колонки
+			List<List<String>> scheme = new ArrayList<>();
+			for (List<com.gillsoft.client.Seat> seats : seatsMap) {
+				List<String> ids = new ArrayList<>();
+				for (com.gillsoft.client.Seat seat : seats) {
+					ids.add(seat.getId() == null ? seatsMap.indexOf(seats) + "_" + seats.indexOf(seat) : seat.getId());
+				}
+				scheme.add(ids);
+			}
+			seatsScheme.getScheme().put(1, scheme);
+			return seatsScheme;
+		} catch (ResponseError e) {
+			throw new RestClientException(e.getMessage());
+		}
 	}
 
 	@Override
 	public List<Seat> getSeatsResponse(String tripId) {
-		// TODO Auto-generated method stub
-		return null;
+		TripIdModel idModel = new TripIdModel().create(tripId);
+		try {
+			List<List<com.gillsoft.client.Seat>> seatsMap = client.getSeatsMap(idModel.getIntervalId());
+			List<Seat> newSeats = new ArrayList<>(seatsMap.size());
+			for (List<com.gillsoft.client.Seat> seats : seatsMap) {
+				for (com.gillsoft.client.Seat seat : seats) {
+					Seat newSeat = new Seat();
+					newSeat.setType(getSeatType(seat.getType()));
+					newSeat.setId(seat.getId() == null ? seatsMap.indexOf(seats) + "_" + seats.indexOf(seat) : seat.getId());
+					newSeat.setNumber(seat.getNumber());
+					newSeat.setStatus(getSeatStatus(seat.getStatus()));
+					newSeats.add(newSeat);
+				}
+			}
+			return newSeats;
+		} catch (ResponseError e) {
+			throw new RestClientException(e.getMessage());
+		}
+	}
+	
+	private SeatStatus getSeatStatus(String status) {
+		if (status == null) {
+			return SeatStatus.EMPTY;
+		}
+		switch (status) {
+		case "disable":
+			return SeatStatus.SALED;
+		case "enable":
+			return SeatStatus.FREE;
+		default:
+			return SeatStatus.EMPTY;
+		}
+	}
+	
+	private SeatType getSeatType(String type) {
+		if (type == null) {
+			return SeatType.FLOOR;
+		}
+		switch (type) {
+		case "seat":
+			return SeatType.SEAT;
+		case "not seat":
+			return SeatType.EXIT;
+		default:
+			return SeatType.FLOOR;
+		}
 	}
 
 	@Override

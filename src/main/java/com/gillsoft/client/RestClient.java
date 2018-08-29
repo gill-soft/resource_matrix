@@ -5,8 +5,10 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Date;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.stream.Collectors;
 
 import org.springframework.beans.factory.annotation.Autowired;
@@ -131,9 +133,28 @@ public class RestClient {
 		params.add("arrive_locality", arriveLocality);
 		params.add("depart_date", StringUtil.dateFormat.format(departDate));
 		params.add("with_empty_seats", "false");
-		params.add("currency", currency.toString());//TODO
+		params.add("currency", getCurrency(currency));
 		params.add("unique_trip", "true");
 		return params;
+	}
+	
+	private Set<String> currencies = new HashSet<>();
+	
+	private String getCurrency(Currency currency) {
+		if (currencies.isEmpty()) {
+			try {
+				currencies.addAll(sendRequest(searchTemplate, CURRENCIES, HttpMethod.GET, null, createLoginParams(DEFAULT_LOCALE),
+						new ParameterizedTypeReference<Response<Map<String, String>>>() {}).getData().keySet());
+			} catch (ResponseError e) {
+			}
+		}
+		if (currency == null) {
+			return currencies.iterator().next();
+		}
+		if (currencies.contains(currency.toString())) {
+			return currency.toString();
+		}
+		return currencies.iterator().next();
 	}
 	
 	public List<Trip> getCachedTrips(String departLocality, String arriveLocality, Date departDate, Currency currency)
@@ -160,6 +181,20 @@ public class RestClient {
 	public RouteInfo getCachedRoute(String routeId) throws ResponseError, IOCacheException {
 		MultiValueMap<String, String> params = getRouteParams(routeId);
 		return getCachedObject(getCacheKey(ROUTE_CACHE_KEY, params), new RouteUpdateTask(params));
+	}
+	
+	public Map<String, String> getFreeSeats(String intervalId) throws ResponseError {
+		MultiValueMap<String, String> params = createLoginParams(null);
+		params.add("interval_id", intervalId);
+		return sendRequest(searchTemplate, FREE_SEATS, HttpMethod.POST, null, params,
+				new ParameterizedTypeReference<Response<Map<String, String>>>() {}).getData();
+	}
+	
+	public List<List<Seat>> getSeatsMap(String intervalId) throws ResponseError {
+		MultiValueMap<String, String> params = createLoginParams(null);
+		params.add("interval_id", intervalId);
+		return sendRequest(searchTemplate, SEATS_MAP, HttpMethod.POST, null, params,
+				new ParameterizedTypeReference<Response<List<List<Seat>>>>() {}).getData();
 	}
 	
 	private MultiValueMap<String, String> createLoginParams(String locale) {
