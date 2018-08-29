@@ -1,5 +1,7 @@
 package com.gillsoft.client;
 
+import java.math.BigDecimal;
+
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonInclude.Include;
 import com.fasterxml.jackson.annotation.JsonProperty;
@@ -14,8 +16,8 @@ public class City extends Country {
 
 	@JsonProperty("geo_region_id")
 	private int geoRegionId;
-	private float latitude;
-	private float longitude;
+	private BigDecimal latitude;
+	private BigDecimal longitude;
 
 	public int getGeoCountryId() {
 		return geoCountryId;
@@ -33,19 +35,19 @@ public class City extends Country {
 		this.geoRegionId = geoRegionId;
 	}
 
-	public float getLatitude() {
+	public BigDecimal getLatitude() {
 		return latitude;
 	}
 
-	public void setLatitude(float latitude) {
+	public void setLatitude(BigDecimal latitude) {
 		this.latitude = latitude;
 	}
 
-	public float getLongitude() {
+	public BigDecimal getLongitude() {
 		return longitude;
 	}
 
-	public void setLongitude(float longitude) {
+	public void setLongitude(BigDecimal longitude) {
 		this.longitude = longitude;
 	}
 

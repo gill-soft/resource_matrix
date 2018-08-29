@@ -1,9 +1,9 @@
 package com.gillsoft;
 
-import java.math.BigDecimal;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.TimeUnit;
 
@@ -75,8 +75,8 @@ public class LocalityServiceController extends AbstractLocalityService {
 						if (locality == null) {
 							locality = new Locality();
 							locality.setId(key);
-							locality.setLatitude(getDecimal(city.getLatitude()));
-							locality.setLongitude(getDecimal(city.getLongitude()));
+							locality.setLatitude(city.getLatitude());
+							locality.setLongitude(city.getLongitude());
 							localities.put(key, locality);
 						}
 						locality.setName(lang, city.getName());
@@ -93,12 +93,16 @@ public class LocalityServiceController extends AbstractLocalityService {
 		} while (cacheError);
 	}
 	
-	private BigDecimal getDecimal(float value) {
-		try {
-			return new BigDecimal(value);
-		} catch (NumberFormatException e) {
+	public static Locality getLocality(String id) {
+		if (all == null) {
 			return null;
 		}
+		for (Locality locality : all) {
+			if (Objects.equals(id, locality.getId())) {
+				return locality;
+			}
+		}
+		return null;
 	}
 
 }

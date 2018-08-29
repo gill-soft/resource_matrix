@@ -17,7 +17,7 @@ public class Trip implements Serializable {
 	private static final long serialVersionUID = -3015444050776850171L;
 	
 	private int tripId;
-	private long routeId;
+	private int routeId;
 	private String routeCombinedId;
 	private String routeCode;
 	private String carrier;
@@ -62,6 +62,8 @@ public class Trip implements Serializable {
 	private Date reservationCloseAt;
 	
 	private List<String> tags;
+	
+	private RouteInfo routeInfo;
 
 	public int getTripId() {
 		return tripId;
@@ -71,11 +73,11 @@ public class Trip implements Serializable {
 		this.tripId = tripId;
 	}
 
-	public long getRouteId() {
+	public int getRouteId() {
 		return routeId;
 	}
 
-	public void setRouteId(long routeId) {
+	public void setRouteId(int routeId) {
 		this.routeId = routeId;
 	}
 
@@ -333,6 +335,14 @@ public class Trip implements Serializable {
 
 	public void setTags(List<String> tags) {
 		this.tags = tags;
+	}
+
+	public RouteInfo getRouteInfo() {
+		return routeInfo;
+	}
+
+	public void setRouteInfo(RouteInfo routeInfo) {
+		this.routeInfo = routeInfo;
 	}
 
 }

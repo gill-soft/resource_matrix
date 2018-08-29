@@ -27,7 +27,7 @@ public class PathPoint implements Serializable {
 	private String stoppingTime;
 
 	@JsonProperty("arrive_day")
-	private String arriveDay;
+	private int arriveDay;
 
 	@JsonProperty("arrive_time")
 	private String arriveTime;
@@ -77,11 +77,11 @@ public class PathPoint implements Serializable {
 		this.stoppingTime = stoppingTime;
 	}
 
-	public String getArriveDay() {
+	public int getArriveDay() {
 		return arriveDay;
 	}
 
-	public void setArriveDay(String arriveDay) {
+	public void setArriveDay(int arriveDay) {
 		this.arriveDay = arriveDay;
 	}
 

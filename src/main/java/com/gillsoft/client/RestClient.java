@@ -3,10 +3,10 @@ package com.gillsoft.client;
 import java.net.URI;
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Set;
 import java.util.stream.Collectors;
 
 import org.springframework.beans.factory.annotation.Autowired;
@@ -30,7 +30,9 @@ import com.gillsoft.cache.CacheHandler;
 import com.gillsoft.cache.IOCacheException;
 import com.gillsoft.cache.RedisMemoryCache;
 import com.gillsoft.logging.SimpleRequestResponseLoggingInterceptor;
+import com.gillsoft.model.Currency;
 import com.gillsoft.util.RestTemplateUtil;
+import com.gillsoft.util.StringUtil;
 
 @Component
 @Scope(value = ConfigurableBeanFactory.SCOPE_SINGLETON)
@@ -107,10 +109,57 @@ public class RestClient {
 	
 	public List<City> getCachedCities(String locale) throws IOCacheException {
 		try {
-			return getCachedObject(RestClient.getCitiesCacheKey(locale), new CitiesUpdateTask(locale));
+			return getCachedObject(getCitiesCacheKey(locale), new CitiesUpdateTask(locale));
 		} catch (ResponseError e) {
 			return null;
 		}
+	}
+	
+	public List<Trip> getTrips(String departLocality, String arriveLocality, Date departDate, Currency currency) throws ResponseError {
+		return getTrips(getTripSearchParams(departLocality, arriveLocality, departDate, currency));
+	}
+	
+	public List<Trip> getTrips(MultiValueMap<String, String> params) throws ResponseError {
+		return sendRequest(searchTemplate, TRIPS, HttpMethod.POST, null, params,
+				new ParameterizedTypeReference<Response<List<Trip>>>() {}).getData();
+	}
+	
+	private MultiValueMap<String, String> getTripSearchParams(String departLocality, String arriveLocality,
+			Date departDate, Currency currency) throws ResponseError {
+		MultiValueMap<String, String> params = createLoginParams(null);
+		params.add("depart_locality", departLocality);
+		params.add("arrive_locality", arriveLocality);
+		params.add("depart_date", StringUtil.dateFormat.format(departDate));
+		params.add("with_empty_seats", "false");
+		params.add("currency", currency.toString());//TODO
+		params.add("unique_trip", "true");
+		return params;
+	}
+	
+	public List<Trip> getCachedTrips(String departLocality, String arriveLocality, Date departDate, Currency currency)
+			throws IOCacheException, ResponseError {
+		MultiValueMap<String, String> params = getTripSearchParams(departLocality, arriveLocality, departDate, currency);
+		return getCachedObject(getCacheKey(TRIPS_CACHE_KEY, params), new TripsUpdateTask(params));
+	}
+	
+	public RouteInfo getRoute(String routeId) throws ResponseError {
+		return getRoute(getRouteParams(routeId));
+	}
+	
+	public RouteInfo getRoute(MultiValueMap<String, String> params) throws ResponseError {
+		return sendRequest(searchTemplate, ROUTE, HttpMethod.POST, null, params,
+				new ParameterizedTypeReference<Response<RouteInfo>>() {}).getData();
+	}
+	
+	private MultiValueMap<String, String> getRouteParams(String routeId) {
+		MultiValueMap<String, String> params = createLoginParams(null);
+		params.add("route_id", routeId);
+		return params;
+	}
+	
+	public RouteInfo getCachedRoute(String routeId) throws ResponseError, IOCacheException {
+		MultiValueMap<String, String> params = getRouteParams(routeId);
+		return getCachedObject(getCacheKey(ROUTE_CACHE_KEY, params), new RouteUpdateTask(params));
 	}
 	
 	private MultiValueMap<String, String> createLoginParams(String locale) {
