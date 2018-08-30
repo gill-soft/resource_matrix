@@ -1,6 +1,5 @@
 package com.gillsoft;
 
-import java.math.BigDecimal;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -48,7 +47,9 @@ import com.gillsoft.model.TripContainer;
 import com.gillsoft.model.Vehicle;
 import com.gillsoft.model.request.TripSearchRequest;
 import com.gillsoft.model.response.TripSearchResponse;
+import com.gillsoft.util.RestTemplateUtil;
 import com.gillsoft.util.StringUtil;
+import com.google.common.base.Objects;
 
 @RestController
 public class SearchServiceController extends SimpleAbstractTripSearchService<SimpleTripSearchPackage<List<Trip>>> {
@@ -82,7 +83,7 @@ public class SearchServiceController extends SimpleAbstractTripSearchService<Sim
 			TripSearchRequest request = searchPackage.getRequest();
 			
 			List<Trip> trips = client.getCachedTrips(request.getLocalityPairs().get(0)[0], request.getLocalityPairs().get(0)[1],
-					request.getDates().get(0), request.getCurrency());
+					request.getDates().get(0), client.getCurrency(request.getCurrency()));
 			searchPackage.setSearchResult(new CopyOnWriteArrayList<Trip>());
 			searchPackage.getSearchResult().addAll(trips);
 			for (Trip trip : trips) {
@@ -134,7 +135,7 @@ public class SearchServiceController extends SimpleAbstractTripSearchService<Sim
 				if (trip.getRouteInfo() != null) {
 					
 					com.gillsoft.model.Trip resTrip = new com.gillsoft.model.Trip();
-					resTrip.setId(addSegment(vehicles, localities, organisations, segments, trip));
+					resTrip.setId(addSegment(vehicles, localities, organisations, segments, trip, result.getRequest()));
 					trips.add(resTrip);
 					
 					result.getSearchResult().remove(i);
@@ -149,7 +150,7 @@ public class SearchServiceController extends SimpleAbstractTripSearchService<Sim
 	}
 	
 	private String addSegment(Map<String, Vehicle> vehicles, Map<String, Locality> localities,
-			Map<String, Organisation> organisations, Map<String, Segment> segments, Trip trip) {
+			Map<String, Organisation> organisations, Map<String, Segment> segments, Trip trip, TripSearchRequest request) {
 		Segment segment = new Segment();
 		segment.setNumber(trip.getRouteCode());
 		segment.setDepartureDate(trip.getDepartDate());
@@ -166,7 +167,8 @@ public class SearchServiceController extends SimpleAbstractTripSearchService<Sim
 		segment.setPrice(createPrice(trip));
 		segment.setRoute(createRoute(trip.getRouteInfo(), trip.getRouteId(), localities));
 		
-		TripIdModel id = new TripIdModel(trip.getIntervalId(), trip.getRouteId());
+		TripIdModel id = new TripIdModel(trip.getIntervalId(), trip.getRouteId(), request.getLocalityPairs().get(0)[0],
+				request.getLocalityPairs().get(0)[1], request.getDates().get(0), client.getCurrency(request.getCurrency()));
 		String key = id.asString();
 		segments.put(key, segment);
 		
@@ -223,23 +225,16 @@ public class SearchServiceController extends SimpleAbstractTripSearchService<Sim
 		// тариф
 		Tariff tariff = new Tariff();
 		tariff.setId("0");
-		tariff.setValue(new BigDecimal(trip.getTariff()).multiply(new BigDecimal("0.01")));
-//		((<|</|)\w+>)|(&\w+;)
-//		if (bound.getCancelRules() != null) {
-//			tariff.setReturnConditions(new ArrayList<>(bound.getCancelRules().size()));
-//			
-//			// условия возврата
-//			for (CancelRule rule : bound.getCancelRules()) {
-//				ReturnCondition condition = new ReturnCondition();
-//				condition.setMinutesBeforeDepart(rule.getTimeTill());
-//				condition.setReturnPercent(rule.getReturnPercent());
-//				tariff.getReturnConditions().add(condition);
-//			}
-//		}
+		tariff.setValue(trip.getTariff());
+		
+		// условия возврата
+		if (trip.getRouteInfo() != null) {
+			tariff.setReturnConditions(createReturnConditions(trip.getRouteInfo().getRoute().getReturnPolicy()));
+		}
 		// стоимость
 		Price price = new Price();
 		price.setCurrency(Currency.valueOf(trip.getCurrency()));
-		price.setAmount(new BigDecimal(trip.getPrice().getOneWay()).multiply(new BigDecimal("0.01")));
+		price.setAmount(trip.getPrice().getOneWay());
 		price.setTariff(tariff);
 		return price;
 	}
@@ -377,31 +372,104 @@ public class SearchServiceController extends SimpleAbstractTripSearchService<Sim
 	@Override
 	public List<Tariff> getTariffsResponse(String tripId) {
 		// TODO Auto-generated method stub
+		Trip trip = getTripFromCache(tripId);
+		if (trip != null) {
+			
+		}
 		return null;
 	}
 
 	@Override
 	public List<RequiredField> getRequiredFieldsResponse(String tripId) {
-		// TODO Auto-generated method stub
+		Trip trip = getTripFromCache(tripId);
+		if (trip != null) {
+			List<RequiredField> fields = new ArrayList<>();
+			for (Entry<String, Boolean> field : trip.getDocFields().entrySet()) {
+				if (field.getValue()) {
+					RequiredField required = getRequiredField(field.getKey());
+					if (required != null) {
+						fields.add(required);
+					}
+				}
+			}
+			return fields;
+		}
 		return null;
+	}
+	
+	private Trip getTripFromCache(String tripId) {
+		TripIdModel idModel = new TripIdModel().create(tripId);
+		try {
+			List<Trip> trips = client.getCachedTrips(idModel.getFrom(), idModel.getTo(),
+					idModel.getDate(), idModel.getCurrency());
+			for (Trip trip : trips) {
+				if (Objects.equal(trip.getIntervalId(), idModel.getIntervalId())) {
+					return trip;
+				}
+			}
+		} catch (IOCacheException e) {
+		} catch (ResponseError e) {
+			throw new RestClientException(e.getMessage());
+		}
+		return null;
+	}
+	
+	private RequiredField getRequiredField(String field) {
+		switch (field) {
+		case "email":
+			return RequiredField.EMAIL;
+		case "phone":
+			return RequiredField.PHONE;
+		case "name":
+			return RequiredField.NAME;
+		case "surname":
+			return RequiredField.SURNAME;
+		case "birth_date":
+			return RequiredField.BIRTHDAY;
+		case "doc_type":
+			return RequiredField.DOCUMENT_TYPE;
+		case "doc_number":
+			return RequiredField.DOCUMENT_NUMBER;
+		default:
+			return null;
+		}
 	}
 
 	@Override
 	public List<Seat> updateSeatsResponse(String tripId, List<Seat> seats) {
-		// TODO Auto-generated method stub
-		return null;
+		throw RestTemplateUtil.createUnavailableMethod();
 	}
 
 	@Override
 	public List<ReturnCondition> getConditionsResponse(String tripId, String tariffId) {
-		// TODO Auto-generated method stub
+		TripIdModel idModel = new TripIdModel().create(tripId);
+		try {
+			RouteInfo routeInfo = client.getCachedRoute(String.valueOf(idModel.getRouteId()));
+			return createReturnConditions(routeInfo.getRoute().getReturnPolicy());
+		} catch (ResponseError e) {
+		} catch (IOCacheException e) {
+			throw new RestClientException(e.getMessage());
+		}
 		return null;
+	}
+	
+	private List<ReturnCondition> createReturnConditions(String returnPolicy) {
+		List<ReturnCondition> returnConditions = new ArrayList<>();
+		String[] policies = returnPolicy.split("((<|</|)\\w+>)");
+		for (String policy : policies) {
+			policy = policy.replaceAll("(&\\w+;)", "").trim();
+			if (!policy.isEmpty()) {
+				ReturnCondition condition = new ReturnCondition();
+				condition.setDescription(policy);
+				returnConditions.add(condition);
+			}
+		}
+		return returnConditions;
 	}
 
 	@Override
 	public List<Document> getDocumentsResponse(String tripId) {
-		// TODO Auto-generated method stub
-		return null;
+		throw RestTemplateUtil.createUnavailableMethod();
 	}
 
 }

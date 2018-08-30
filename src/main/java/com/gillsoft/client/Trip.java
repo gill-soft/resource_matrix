@@ -1,6 +1,7 @@
 package com.gillsoft.client;
 
 import java.io.Serializable;
+import java.math.BigDecimal;
 import java.util.Date;
 import java.util.List;
 import java.util.Map;
@@ -47,7 +48,7 @@ public class Trip implements Serializable {
 	private String timeInWay;
 	private boolean international;
 	private Map<String, Boolean> docFields;
-	private int tariff;
+	private BigDecimal tariff;
 	private Price price;
 	private List<Discount> discounts;
 	private String currency;
@@ -273,11 +274,11 @@ public class Trip implements Serializable {
 		this.docFields = docFields;
 	}
 
-	public int getTariff() {
+	public BigDecimal getTariff() {
 		return tariff;
 	}
 
-	public void setTariff(int tariff) {
+	public void setTariff(BigDecimal tariff) {
 		this.tariff = tariff;
 	}
 

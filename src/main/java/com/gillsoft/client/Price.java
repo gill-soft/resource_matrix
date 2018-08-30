@@ -1,6 +1,7 @@
 package com.gillsoft.client;
 
 import java.io.Serializable;
+import java.math.BigDecimal;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonProperty;
@@ -12,24 +13,24 @@ public class Price implements Serializable {
 	private static final long serialVersionUID = 7503673018700582892L;
 
 	@JsonProperty("one_way")
-	private int oneWay;
+	private BigDecimal oneWay;
 	
 	@JsonProperty("round_trip")
-	private int roundTrip;
+	private BigDecimal roundTrip;
 
-	public int getOneWay() {
+	public BigDecimal getOneWay() {
 		return oneWay;
 	}
 
-	public void setOneWay(int oneWay) {
+	public void setOneWay(BigDecimal oneWay) {
 		this.oneWay = oneWay;
 	}
 
-	public int getRoundTrip() {
+	public BigDecimal getRoundTrip() {
 		return roundTrip;
 	}
 
-	public void setRoundTrip(int roundTrip) {
+	public void setRoundTrip(BigDecimal roundTrip) {
 		this.roundTrip = roundTrip;
 	}
 

@@ -117,7 +117,7 @@ public class RestClient {
 		}
 	}
 	
-	public List<Trip> getTrips(String departLocality, String arriveLocality, Date departDate, Currency currency) throws ResponseError {
+	public List<Trip> getTrips(String departLocality, String arriveLocality, Date departDate, String currency) throws ResponseError {
 		return getTrips(getTripSearchParams(departLocality, arriveLocality, departDate, currency));
 	}
 	
@@ -127,20 +127,20 @@ public class RestClient {
 	}
 	
 	private MultiValueMap<String, String> getTripSearchParams(String departLocality, String arriveLocality,
-			Date departDate, Currency currency) throws ResponseError {
+			Date departDate, String currency) throws ResponseError {
 		MultiValueMap<String, String> params = createLoginParams(null);
 		params.add("depart_locality", departLocality);
 		params.add("arrive_locality", arriveLocality);
 		params.add("depart_date", StringUtil.dateFormat.format(departDate));
 		params.add("with_empty_seats", "false");
-		params.add("currency", getCurrency(currency));
+		params.add("currency", currency);
 		params.add("unique_trip", "true");
 		return params;
 	}
 	
 	private Set<String> currencies = new HashSet<>();
 	
-	private String getCurrency(Currency currency) {
+	public String getCurrency(Currency currency) {
 		if (currencies.isEmpty()) {
 			try {
 				currencies.addAll(sendRequest(searchTemplate, CURRENCIES, HttpMethod.GET, null, createLoginParams(DEFAULT_LOCALE),
@@ -157,7 +157,7 @@ public class RestClient {
 		return currencies.iterator().next();
 	}
 	
-	public List<Trip> getCachedTrips(String departLocality, String arriveLocality, Date departDate, Currency currency)
+	public List<Trip> getCachedTrips(String departLocality, String arriveLocality, Date departDate, String currency)
 			throws IOCacheException, ResponseError {
 		MultiValueMap<String, String> params = getTripSearchParams(departLocality, arriveLocality, departDate, currency);
 		return getCachedObject(getCacheKey(TRIPS_CACHE_KEY, params), new TripsUpdateTask(params));
