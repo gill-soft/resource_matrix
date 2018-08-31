@@ -174,10 +174,10 @@ public class SearchServiceController extends SimpleAbstractTripSearchService<Sim
 		segment.setFreeSeatsCount(trip.getFreeSeats().getCount());
 		segment.setTimeInWay(trip.getTimeInWay());
 		
-		segment.setDeparture(createLocality(localities, trip.getDepartCityId(), trip.getDepartStationId(), trip.getDepartStation()));
-		segment.setArrival(createLocality(localities, trip.getArriveCityId(), trip.getArriveStationId(), trip.getArriveStation()));
+		segment.setDeparture(createLocality(localities, trip.getDepartCityId(), trip.getDepartStationId(), null, trip.getDepartStation()));
+		segment.setArrival(createLocality(localities, trip.getArriveCityId(), trip.getArriveStationId(), null, trip.getArriveStation()));
 		
-		segment.setCarrier(addOrganisation(organisations, trip));
+		segment.setCarrier(addOrganisation(organisations, trip.getCarrierCode(), trip.getCarrierName()));
 		segment.setVehicle(addVehicle(vehicles, trip.getBusNumber()));
 		
 		segment.setPrice(createPrice(trip));
@@ -199,12 +199,12 @@ public class SearchServiceController extends SimpleAbstractTripSearchService<Sim
 		}
 	}
 	
-	private Locality createLocality(Map<String, Locality> localities, int parentId, int id, String address) {
+	public Locality createLocality(Map<String, Locality> localities, int parentId, int id, String name, String address) {
 		String key = String.valueOf(id);
 		Locality station = new Locality();
-		for (Lang lang : Lang.values()) {
-			station.setAddress(lang, address);
-		}
+		station.setName(name);
+		station.setAddress(address);
+		
 		Locality parent = LocalityServiceController.getLocality(String.valueOf(parentId));
 		station.setParent(parent);
 		Locality locality = localities.get(key);
@@ -214,17 +214,17 @@ public class SearchServiceController extends SimpleAbstractTripSearchService<Sim
 		return new Locality(key);
 	}
 	
-	public Organisation addOrganisation(Map<String, Organisation> organisations, Trip trip) {
-		if (trip.getCarrierName() == null) {
+	public Organisation addOrganisation(Map<String, Organisation> organisations, String code, String name) {
+		if (code == null
+				&& name == null) {
 			return null;
 		}
-		String key = StringUtil.md5(trip.getCarrierCode());
+		String key = StringUtil.md5(code);
 		Organisation organisation = organisations.get(key);
 		if (organisation == null) {
 			organisation = new Organisation();
-			for (Lang lang : Lang.values()) {
-				organisation.setName(lang, trip.getCarrierName());
-			}
+			organisation.setTradeMark(code);
+			organisation.setName(name);
 			organisations.put(key, organisation);
 		}
 		return new Organisation(key);
@@ -419,6 +419,7 @@ public class SearchServiceController extends SimpleAbstractTripSearchService<Sim
 				tariffs.add(tariff);
 			}
 			Tariff tariff = new Tariff();
+			tariff.setId("0");
 			tariff.setCode("base");
 			tariff.setValue(trip.getTariff());
 			tariffs.add(tariff);
@@ -445,7 +446,7 @@ public class SearchServiceController extends SimpleAbstractTripSearchService<Sim
 		return null;
 	}
 	
-	private Trip getTripFromCache(String tripId) {
+	public Trip getTripFromCache(String tripId) {
 		TripIdModel idModel = new TripIdModel().create(tripId);
 		try {
 			List<Trip> trips = client.getCachedTrips(idModel.getFrom(), idModel.getTo(),

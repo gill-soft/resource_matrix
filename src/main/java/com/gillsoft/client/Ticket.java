@@ -42,16 +42,16 @@ public class Ticket {
 	private Date createdAt;
 
 	@JsonProperty("geo_point_from")
-	private String geoPointFrom;
+	private int geoPointFrom;
 	
 	@JsonProperty("geo_locality_from")
-	private String geoLocalityFrom;
+	private int geoLocalityFrom;
 	
 	@JsonProperty("geo_point_to")
-	private String geoPointTo;
+	private int geoPointTo;
 	
 	@JsonProperty("geo_locality_to")
-	private String geoLocalityTo;
+	private int geoLocalityTo;
 
 	@JsonProperty("depart_at")
 	@JsonFormat(shape = Shape.STRING, pattern = "yyyy-MM-dd HH:mm:ss")
@@ -241,35 +241,35 @@ public class Ticket {
 		this.createdAt = createdAt;
 	}
 
-	public String getGeoPointFrom() {
+	public int getGeoPointFrom() {
 		return geoPointFrom;
 	}
 
-	public void setGeoPointFrom(String geoPointFrom) {
+	public void setGeoPointFrom(int geoPointFrom) {
 		this.geoPointFrom = geoPointFrom;
 	}
 
-	public String getGeoLocalityFrom() {
+	public int getGeoLocalityFrom() {
 		return geoLocalityFrom;
 	}
 
-	public void setGeoLocalityFrom(String geoLocalityFrom) {
+	public void setGeoLocalityFrom(int geoLocalityFrom) {
 		this.geoLocalityFrom = geoLocalityFrom;
 	}
 
-	public String getGeoPointTo() {
+	public int getGeoPointTo() {
 		return geoPointTo;
 	}
 
-	public void setGeoPointTo(String geoPointTo) {
+	public void setGeoPointTo(int geoPointTo) {
 		this.geoPointTo = geoPointTo;
 	}
 
-	public String getGeoLocalityTo() {
+	public int getGeoLocalityTo() {
 		return geoLocalityTo;
 	}
 
-	public void setGeoLocalityTo(String geoLocalityTo) {
+	public void setGeoLocalityTo(int geoLocalityTo) {
 		this.geoLocalityTo = geoLocalityTo;
 	}
 

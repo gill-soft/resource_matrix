@@ -33,6 +33,7 @@ import com.gillsoft.cache.IOCacheException;
 import com.gillsoft.cache.RedisMemoryCache;
 import com.gillsoft.logging.SimpleRequestResponseLoggingInterceptor;
 import com.gillsoft.model.Currency;
+import com.gillsoft.model.Customer;
 import com.gillsoft.util.RestTemplateUtil;
 import com.gillsoft.util.StringUtil;
 
@@ -40,36 +41,30 @@ import com.gillsoft.util.StringUtil;
 @Scope(value = ConfigurableBeanFactory.SCOPE_SINGLETON)
 public class RestClient {
 	
-	public static final String COUNTRIES_CACHE_KEY = "matrix.countries.";
 	public static final String CITIES_CACHE_KEY = "matrix.cities.";
 	public static final String ROUTE_CACHE_KEY = "matrix.route.";
 	public static final String RULE_CACHE_KEY = "matrix.rule.";
 	public static final String TRIPS_CACHE_KEY = "matrix.trips";
 	
-	public static final String PING = "/get/ping";
-	public static final String LOCALES = "/get/locales";
-	public static final String CURRENCIES = "/get/currency-list";
-	public static final String COUNTRIES = "/get/countries";
-	public static final String CITIES = "/get/cities";
-	public static final String TRIPS = "/get/trips";
-	public static final String RULES = "/get/trip/return-rules";
-	public static final String ROUTE = "/get/route-info";
-	public static final String SEATS_MAP = "/get/seatsMap";
-	public static final String FREE_SEATS = "/get/freeSeats";
-	public static final String NEW_ORDER = "/order/new";
-	public static final String RESERVE = "/order/reserve";
-	public static final String BUY = "/order/buy";
-	public static final String INFO = "/order/info";
-	public static final String CANCEL = "/order/cancel";
-	public static final String ANNULMENT = "/order/annulment";
-	public static final String AUTO_RETURN = "/order/auto-return";
-	public static final String RETURN = "/order/return";
-	public static final String TICKET_AUTO_RETURN = "/ticket/auto-return";
-	public static final String TICKET_AUTO_RETURN_PRICE = "/ticket/auto-return-price";
-	public static final String TICKET_ANNULMENT = "/ticket/annulment";
-	public static final String TICKET_RETURN = "/ticket/return";
+	private static final String PING = "/get/ping";
+	private static final String CURRENCIES = "/get/currency-list";
+	private static final String CITIES = "/get/cities";
+	private static final String TRIPS = "/get/trips";
+	private static final String RULES = "/get/trip/return-rules";
+	private static final String ROUTE = "/get/route-info";
+	private static final String SEATS_MAP = "/get/seatsMap";
+	private static final String FREE_SEATS = "/get/freeSeats";
+	private static final String NEW_ORDER = "/order/new";
+	private static final String RESERVE = "/order/reserve";
+	private static final String BUY = "/order/buy";
+	private static final String INFO = "/order/info";
+	private static final String CANCEL = "/order/cancel";
+	private static final String ANNULMENT = "/order/annulment";
+	private static final String TICKET_AUTO_RETURN = "/ticket/auto-return";
+	private static final String TICKET_AUTO_RETURN_PRICE = "/ticket/auto-return-price";
+	private static final String PRINT_TICKETS = "/order/print/{0}";
 	
-	public static final String DEFAULT_LOCALE = "en";
+	private static final String DEFAULT_LOCALE = "en";
 	
 	@Autowired
     @Qualifier("RedisMemoryCache")
@@ -212,6 +207,73 @@ public class RestClient {
 	public List<ReturnRule> getReturnRules(MultiValueMap<String, String> params) throws ResponseError {
 		return sendRequest(searchTemplate, RULES, HttpMethod.POST, null, params,
 				new ParameterizedTypeReference<Response<List<ReturnRule>>>() {}).getData();
+	}
+	
+	public Order newOrder(String intervalId, Currency currency, List<Customer> customers) throws ResponseError {
+		MultiValueMap<String, String> params = createLoginParams(null);
+		params.add("interval_id[0]", intervalId);
+		params.add("email", customers.get(0).getEmail());
+		params.add("phone", customers.get(0).getPhone());
+		params.add("currency", getCurrency(currency));
+		params.add("with_fees", "1");
+		for (int i = 0; i < customers.size(); i++) {
+			params.add("name[" + i + "]", customers.get(i).getName());
+			params.add("surname[" + i + "]", customers.get(i).getSurname());
+		}
+		return sendRequest(template, NEW_ORDER, HttpMethod.POST, null, params,
+				new ParameterizedTypeReference<Response<Order>>() {}).getData();
+	}
+	
+	private MultiValueMap<String, String> getOrderParams(String orderId, String description) {
+		MultiValueMap<String, String> params = createLoginParams(null);
+		params.add("order_id", orderId);
+		params.add("description", description);
+		params.add("with_fees", "true");
+		return params;
+	}
+	
+	public Order cancel(String orderId) throws ResponseError {
+		return orderMethod(orderId, null, CANCEL);
+	}
+	
+	public Order info(String orderId) throws ResponseError {
+		return orderMethod(orderId, null, INFO);
+	}
+	
+	public Order reserve(String orderId) throws ResponseError {
+		return orderMethod(orderId, null, RESERVE);
+	}
+	
+	public Order buy(String orderId) throws ResponseError {
+		return orderMethod(orderId, null, BUY);
+	}
+	
+	public Order annulate(String orderId, String description) throws ResponseError {
+		return orderMethod(orderId, description, ANNULMENT);
+	}
+	
+	private Order orderMethod(String orderId, String description, String method) throws ResponseError {
+		return sendRequest(template, method, HttpMethod.POST, null, getOrderParams(orderId, description),
+				new ParameterizedTypeReference<Response<Order>>() {}).getData();
+	}
+	
+	private MultiValueMap<String, String> geTicketParams(String ticketId) {
+		MultiValueMap<String, String> params = createLoginParams(null);
+		params.add("ticket_id", ticketId);
+		return params;
+	}
+	
+	public Ticket autoReturnPrice(String ticketId) throws ResponseError {
+		return ticketMethod(ticketId, TICKET_AUTO_RETURN_PRICE);
+	}
+	
+	public Ticket autoReturn(String ticketId) throws ResponseError {
+		return ticketMethod(ticketId, TICKET_AUTO_RETURN);
+	}
+	
+	private Ticket ticketMethod(String ticketId, String method) throws ResponseError {
+		return sendRequest(template, method, HttpMethod.POST, null, geTicketParams(ticketId),
+				new ParameterizedTypeReference<Response<Ticket>>() {}).getData();
 	}
 	
 	private MultiValueMap<String, String> createLoginParams(String locale) {
