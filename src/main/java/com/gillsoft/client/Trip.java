@@ -3,12 +3,14 @@ package com.gillsoft.client;
 import java.io.Serializable;
 import java.math.BigDecimal;
 import java.util.Date;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
 import com.fasterxml.jackson.annotation.JsonFormat;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonProperty;
+import com.gillsoft.model.Lang;
 import com.fasterxml.jackson.annotation.JsonFormat.Shape;
 import com.fasterxml.jackson.annotation.JsonInclude.Include;
 
@@ -65,6 +67,8 @@ public class Trip implements Serializable {
 	private List<String> tags;
 	
 	private RouteInfo routeInfo;
+	
+	private Map<Lang, List<ReturnRule>> returnRules;
 
 	public int getTripId() {
 		return tripId;
@@ -344,6 +348,21 @@ public class Trip implements Serializable {
 
 	public void setRouteInfo(RouteInfo routeInfo) {
 		this.routeInfo = routeInfo;
+	}
+
+	public Map<Lang, List<ReturnRule>> getReturnRules() {
+		return returnRules;
+	}
+
+	public void setReturnRules(Map<Lang, List<ReturnRule>> returnRules) {
+		this.returnRules = returnRules;
+	}
+	
+	public void addReturnRules(Lang lang, List<ReturnRule> returnRules) {
+		if (this.returnRules == null) {
+			this.returnRules = new HashMap<>();
+		}
+		this.returnRules.put(lang, returnRules);
 	}
 
 }

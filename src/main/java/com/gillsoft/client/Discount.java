@@ -22,6 +22,21 @@ public class Discount extends Fee {
 	private BigDecimal discountValue;
 
 	private Map<String, Parameters> i18n;
+	
+	@JsonProperty("limit_from")
+	private int limitFrom;
+	
+	@JsonProperty("limit_to")
+    private int limitTo;
+	
+	@JsonProperty("is_in_path_tariff")
+    private boolean inPathTariff;
+	
+	@JsonProperty("is_in_carrier_tariff")
+    private boolean inCarrierTariff;
+    
+    @JsonProperty("is_from_base")
+    private boolean fromBase;
 
 	public String getDiscountKind() {
 		return discountKind;
@@ -53,6 +68,46 @@ public class Discount extends Fee {
 
 	public void setI18n(Map<String, Parameters> i18n) {
 		this.i18n = i18n;
+	}
+
+	public int getLimitFrom() {
+		return limitFrom;
+	}
+
+	public void setLimitFrom(int limitFrom) {
+		this.limitFrom = limitFrom;
+	}
+
+	public int getLimitTo() {
+		return limitTo;
+	}
+
+	public void setLimitTo(int limitTo) {
+		this.limitTo = limitTo;
+	}
+
+	public boolean isInPathTariff() {
+		return inPathTariff;
+	}
+
+	public void setInPathTariff(boolean inPathTariff) {
+		this.inPathTariff = inPathTariff;
+	}
+
+	public boolean isInCarrierTariff() {
+		return inCarrierTariff;
+	}
+
+	public void setInCarrierTariff(boolean inCarrierTariff) {
+		this.inCarrierTariff = inCarrierTariff;
+	}
+
+	public boolean isFromBase() {
+		return fromBase;
+	}
+
+	public void setFromBase(boolean fromBase) {
+		this.fromBase = fromBase;
 	}
 	
 }

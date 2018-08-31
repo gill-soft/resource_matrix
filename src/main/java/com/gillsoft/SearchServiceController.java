@@ -1,6 +1,9 @@
 package com.gillsoft;
 
+import java.math.BigDecimal;
+import java.text.ParseException;
 import java.util.ArrayList;
+import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -16,11 +19,13 @@ import org.springframework.web.client.RestClientException;
 import com.gillsoft.abstract_rest_service.SimpleAbstractTripSearchService;
 import com.gillsoft.cache.CacheHandler;
 import com.gillsoft.cache.IOCacheException;
+import com.gillsoft.client.Discount;
 import com.gillsoft.client.Parameters;
 import com.gillsoft.client.PathPoint;
 import com.gillsoft.client.Point;
 import com.gillsoft.client.ResponseError;
 import com.gillsoft.client.RestClient;
+import com.gillsoft.client.ReturnRule;
 import com.gillsoft.client.RouteInfo;
 import com.gillsoft.client.Trip;
 import com.gillsoft.client.TripIdModel;
@@ -95,6 +100,17 @@ public class SearchServiceController extends SimpleAbstractTripSearchService<Sim
 					} catch (ResponseError e) {
 					}
 				}
+				if (trip.getReturnRules() == null) {
+					for (Lang lang : Lang.values()) {
+						try {
+							trip.addReturnRules(lang, client.getCachedReturnRules(trip.getIntervalId(),
+									lang.toString().toLowerCase(), getDate(trip.getDepartDate(), trip.getDepartTime())));
+						} catch (IOCacheException e) {
+							searchPackage.setInProgress(true);
+						} catch (ResponseError e) {
+						}
+					}
+				}
 			}
 		} catch (IOCacheException e) {
 			searchPackage.setInProgress(true);
@@ -153,8 +169,8 @@ public class SearchServiceController extends SimpleAbstractTripSearchService<Sim
 			Map<String, Organisation> organisations, Map<String, Segment> segments, Trip trip, TripSearchRequest request) {
 		Segment segment = new Segment();
 		segment.setNumber(trip.getRouteCode());
-		segment.setDepartureDate(trip.getDepartDate());
-		segment.setArrivalDate(trip.getArriveDate());
+		segment.setDepartureDate(getDate(trip.getDepartDate(), trip.getDepartTime()));
+		segment.setArrivalDate(getDate(trip.getArriveDate(), trip.getArriveTime()));
 		segment.setFreeSeatsCount(trip.getFreeSeats().getCount());
 		segment.setTimeInWay(trip.getTimeInWay());
 		
@@ -173,6 +189,14 @@ public class SearchServiceController extends SimpleAbstractTripSearchService<Sim
 		segments.put(key, segment);
 		
 		return key;
+	}
+	
+	private Date getDate(Date date, String time) {
+		try {
+			return StringUtil.fullDateFormat.parse(StringUtil.dateFormat.format(date) + " " + time);
+		} catch (ParseException e) {
+			return null;
+		}
 	}
 	
 	private Locality createLocality(Map<String, Locality> localities, int parentId, int id, String address) {
@@ -228,7 +252,9 @@ public class SearchServiceController extends SimpleAbstractTripSearchService<Sim
 		tariff.setValue(trip.getTariff());
 		
 		// условия возврата
-		if (trip.getRouteInfo() != null) {
+		if (trip.getReturnRules() != null) {
+			tariff.setReturnConditions(createReturnConditions(trip.getReturnRules()));
+		} else if (trip.getRouteInfo() != null) {
 			tariff.setReturnConditions(createReturnConditions(trip.getRouteInfo().getRoute().getReturnPolicy()));
 		}
 		// стоимость
@@ -371,10 +397,32 @@ public class SearchServiceController extends SimpleAbstractTripSearchService<Sim
 
 	@Override
 	public List<Tariff> getTariffsResponse(String tripId) {
-		// TODO Auto-generated method stub
 		Trip trip = getTripFromCache(tripId);
 		if (trip != null) {
-			
+			List<Tariff> tariffs = new ArrayList<>();
+			for (Discount discount : trip.getDiscounts()) {
+				Tariff tariff = new Tariff();
+				tariff.setId(String.valueOf(discount.getId()));
+				tariff.setMinAge(discount.getLimitFrom());
+				tariff.setMaxAge(discount.getLimitTo());
+				tariff.setCode(discount.getKind());
+				for (Lang lang : Lang.values()) {
+					Parameters parameters = discount.getI18n().get(lang.toString().toLowerCase());
+					if (parameters != null) {
+						tariff.setName(lang, parameters.getName());
+						tariff.setDescription(lang, parameters.getDescription());
+					}
+				}
+				tariff.setValue(trip.getTariff()
+						.multiply(new BigDecimal(100).subtract(discount.getValue())
+								.multiply(new BigDecimal("0.01"))));
+				tariffs.add(tariff);
+			}
+			Tariff tariff = new Tariff();
+			tariff.setCode("base");
+			tariff.setValue(trip.getTariff());
+			tariffs.add(tariff);
+			return tariffs;
 		}
 		return null;
 	}
@@ -443,14 +491,40 @@ public class SearchServiceController extends SimpleAbstractTripSearchService<Sim
 	@Override
 	public List<ReturnCondition> getConditionsResponse(String tripId, String tariffId) {
 		TripIdModel idModel = new TripIdModel().create(tripId);
-		try {
-			RouteInfo routeInfo = client.getCachedRoute(String.valueOf(idModel.getRouteId()));
-			return createReturnConditions(routeInfo.getRoute().getReturnPolicy());
-		} catch (ResponseError e) {
-		} catch (IOCacheException e) {
-			throw new RestClientException(e.getMessage());
+		RestClientException exception = null;
+		Map<Lang, List<ReturnRule>> rules = new HashMap<>();
+		for (Lang lang : Lang.values()) {
+			try {
+				rules.put(lang, client.getCachedReturnRules(idModel.getIntervalId(), lang.toString().toLowerCase(), null));
+			} catch (IOCacheException e) {
+			} catch (ResponseError e) {
+				exception = new RestClientException(e.getMessage());
+			}
+		}
+		if (!rules.isEmpty()) {
+			return createReturnConditions(rules);
+		}
+		if (exception != null) {
+			throw exception;
 		}
 		return null;
+	}
+	
+	private List<ReturnCondition> createReturnConditions(Map<Lang, List<ReturnRule>> rules) {
+		Map<Integer, ReturnCondition> returnConditions = new HashMap<>(rules.size());
+		for (Entry<Lang, List<ReturnRule>> returnRules : rules.entrySet()) {
+			for (ReturnRule rule : returnRules.getValue()) {
+				ReturnCondition condition = returnConditions.get(rule.getMinutesBeforeDepart());
+				if (condition == null) {
+					condition = new ReturnCondition();
+					returnConditions.put(rule.getMinutesBeforeDepart(), condition);
+				}
+				condition.setTitle(returnRules.getKey(), rule.getTitle());
+				condition.setDescription(returnRules.getKey(), rule.getDescription());
+				condition.setMinutesBeforeDepart(rule.getMinutesBeforeDepart());
+			}
+		}
+		return new ArrayList<>(returnConditions.values());
 	}
 	
 	private List<ReturnCondition> createReturnConditions(String returnPolicy) {

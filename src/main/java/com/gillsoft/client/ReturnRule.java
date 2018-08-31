@@ -1,5 +1,6 @@
 package com.gillsoft.client;
 
+import java.io.Serializable;
 import java.util.Date;
 
 import com.fasterxml.jackson.annotation.JsonFormat;
@@ -8,7 +9,9 @@ import com.fasterxml.jackson.annotation.JsonFormat.Shape;
 import com.fasterxml.jackson.annotation.JsonInclude.Include;
 
 @JsonInclude(value = Include.NON_NULL)
-public class ReturnRule {
+public class ReturnRule implements Serializable {
+	
+	private static final long serialVersionUID = -44352363257714810L;
 	
 	private String title;
 	private String description;

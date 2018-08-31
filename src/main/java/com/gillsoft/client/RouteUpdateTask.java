@@ -9,7 +9,7 @@ public class RouteUpdateTask extends AbstractUpdateTask {
 
 	private static final long serialVersionUID = -6859368060540072639L;
 	
-	protected MultiValueMap<String, String> params;
+	private MultiValueMap<String, String> params;
 	
 	public RouteUpdateTask(MultiValueMap<String, String> params) {
 		this.params = params;
@@ -18,11 +18,10 @@ public class RouteUpdateTask extends AbstractUpdateTask {
 	@Override
 	public void run() {
 		RestClient client = ContextProvider.getBean(RestClient.class);
-		RouteInfo route;
 		try {
-			route = client.getRoute(params);
+			RouteInfo route = client.getRoute(params);
 			writeObject(client.getCache(), RestClient.getCacheKey(RestClient.ROUTE_CACHE_KEY, params),
-					route, getTimeToLive(route), Config.getCacheTripUpdateDelay());
+					route, getTimeToLive(route), Config.getCacheRouteUpdateDelay());
 		} catch (ResponseError e) {
 			writeObject(client.getCache(), RestClient.getCacheKey(RestClient.ROUTE_CACHE_KEY, params),
 					e, Config.getCacheErrorTimeToLive(), Config.getCacheErrorUpdateDelay());
@@ -31,8 +30,8 @@ public class RouteUpdateTask extends AbstractUpdateTask {
 	
 	// время жизни до конца существования маршрута
 	private long getTimeToLive(RouteInfo routeInfo) {
-		if (Config.getCacheTripTimeToLive() != 0) {
-			return Config.getCacheTripTimeToLive();
+		if (Config.getCacheRouteTimeToLive() != 0) {
+			return Config.getCacheRouteTimeToLive();
 		}
 		if (routeInfo.getRoute().getEnded() == null
 				|| routeInfo.getRoute().getEnded().getTime() < System.currentTimeMillis()) {

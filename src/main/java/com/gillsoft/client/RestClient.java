@@ -43,6 +43,7 @@ public class RestClient {
 	public static final String COUNTRIES_CACHE_KEY = "matrix.countries.";
 	public static final String CITIES_CACHE_KEY = "matrix.cities.";
 	public static final String ROUTE_CACHE_KEY = "matrix.route.";
+	public static final String RULE_CACHE_KEY = "matrix.rule.";
 	public static final String TRIPS_CACHE_KEY = "matrix.trips";
 	
 	public static final String PING = "/get/ping";
@@ -184,17 +185,33 @@ public class RestClient {
 	}
 	
 	public Map<String, String> getFreeSeats(String intervalId) throws ResponseError {
-		MultiValueMap<String, String> params = createLoginParams(null);
-		params.add("interval_id", intervalId);
-		return sendRequest(searchTemplate, FREE_SEATS, HttpMethod.POST, null, params,
+		return sendRequest(searchTemplate, FREE_SEATS, HttpMethod.POST, null, getIntervalParams(intervalId, null),
 				new ParameterizedTypeReference<Response<Map<String, String>>>() {}).getData();
 	}
 	
 	public List<List<Seat>> getSeatsMap(String intervalId) throws ResponseError {
-		MultiValueMap<String, String> params = createLoginParams(null);
-		params.add("interval_id", intervalId);
-		return sendRequest(searchTemplate, SEATS_MAP, HttpMethod.POST, null, params,
+		return sendRequest(searchTemplate, SEATS_MAP, HttpMethod.POST, null, getIntervalParams(intervalId, null),
 				new ParameterizedTypeReference<Response<List<List<Seat>>>>() {}).getData();
+	}
+	
+	private MultiValueMap<String, String> getIntervalParams(String intervalId, String locale) {
+		MultiValueMap<String, String> params = createLoginParams(locale);
+		params.add("interval_id", intervalId);
+		return params;
+	}
+	
+	public List<ReturnRule> getReturnRules(String intervalId, String locale) throws ResponseError {
+		return getReturnRules(getIntervalParams(intervalId, locale));
+	}
+	
+	public List<ReturnRule> getCachedReturnRules(String intervalId, String locale, Date tripStart) throws ResponseError, IOCacheException {
+		MultiValueMap<String, String> params = getIntervalParams(intervalId, locale);
+		return getCachedObject(getCacheKey(RULE_CACHE_KEY, params), tripStart == null ? null : new ReturnRuleUpdateTask(params, tripStart));
+	}
+	
+	public List<ReturnRule> getReturnRules(MultiValueMap<String, String> params) throws ResponseError {
+		return sendRequest(searchTemplate, RULES, HttpMethod.POST, null, params,
+				new ParameterizedTypeReference<Response<List<ReturnRule>>>() {}).getData();
 	}
 	
 	private MultiValueMap<String, String> createLoginParams(String locale) {
