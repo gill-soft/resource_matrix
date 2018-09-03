@@ -293,12 +293,15 @@ public class OrderServiceController extends AbstractOrderService {
 
 	@Override
 	public OrderResponse bookingResponse(String orderId) {
-		// TODO Auto-generated method stub
-		return null;
+		return coonfirmOrder(orderId, true);
 	}
 
 	@Override
 	public OrderResponse confirmResponse(String orderId) {
+		return coonfirmOrder(orderId, false);
+	}
+	
+	private OrderResponse coonfirmOrder(String orderId, boolean reserve) {
 		
 		// формируем ответ
 		OrderResponse response = new OrderResponse();
@@ -309,9 +312,21 @@ public class OrderServiceController extends AbstractOrderService {
 
 		for (String id : orderIdModel.getIds().keySet()) {
 			try {
-				client.buy(id);
-				for (String ticketId : orderIdModel.getIds().get(id)) {
-					addServiceItem(resultItems, ticketId, true, null);
+				if (reserve) {
+					Order order = client.reserve(id);
+					List<ServiceItem> reserveItems = new ArrayList<>();
+					for (String ticketId : orderIdModel.getIds().get(id)) {
+						addServiceItem(reserveItems, ticketId, true, null);
+					}
+					for (ServiceItem service : reserveItems) {
+						service.setExpire(order.getReservedTo());
+					}
+					resultItems.addAll(reserveItems);
+				} else {
+					client.buy(id);
+					for (String ticketId : orderIdModel.getIds().get(id)) {
+						addServiceItem(resultItems, ticketId, true, null);
+					}
 				}
 			} catch (ResponseError e) {
 				for (String ticketId : orderIdModel.getIds().get(id)) {
