@@ -17,6 +17,7 @@ public class ReturnRuleUpdateTask extends AbstractUpdateTask {
 	
 	public ReturnRuleUpdateTask(MultiValueMap<String, String> params, Date tripDate) {
 		this.params = params;
+		this.tripDate = tripDate;
 	}
 
 	@Override

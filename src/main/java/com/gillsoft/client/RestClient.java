@@ -8,6 +8,7 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Set;
 import java.util.stream.Collectors;
 
@@ -34,6 +35,7 @@ import com.gillsoft.cache.RedisMemoryCache;
 import com.gillsoft.logging.SimpleRequestResponseLoggingInterceptor;
 import com.gillsoft.model.Currency;
 import com.gillsoft.model.Customer;
+import com.gillsoft.model.ServiceItem;
 import com.gillsoft.util.RestTemplateUtil;
 import com.gillsoft.util.StringUtil;
 
@@ -209,16 +211,27 @@ public class RestClient {
 				new ParameterizedTypeReference<Response<List<ReturnRule>>>() {}).getData();
 	}
 	
-	public Order newOrder(String intervalId, Currency currency, List<Customer> customers) throws ResponseError {
+	public Order newOrder(String intervalId, Currency currency, Map<String, Customer> customers,
+			List<ServiceItem> services) throws ResponseError {
 		MultiValueMap<String, String> params = createLoginParams(null);
 		params.add("interval_id[0]", intervalId);
-		params.add("email", customers.get(0).getEmail());
-		params.add("phone", customers.get(0).getPhone());
 		params.add("currency", getCurrency(currency));
 		params.add("with_fees", "1");
-		for (int i = 0; i < customers.size(); i++) {
-			params.add("name[" + i + "]", customers.get(i).getName());
-			params.add("surname[" + i + "]", customers.get(i).getSurname());
+		boolean contactsAdded = false;
+		for (int i = 0; i < services.size(); i++) {
+			ServiceItem service = services.get(i);
+			Customer customer = customers.get(service.getCustomer().getId());
+			if (!contactsAdded) {
+				params.add("email", customer.getEmail());
+				params.add("phone", customer.getPhone());
+				contactsAdded = true;
+			}
+			params.add("name[" + i + "]", customer.getName());
+			params.add("surname[" + i + "]", customer.getSurname());
+			if (!Objects.equals("0", service.getPrice().getTariff().getId())) {
+				params.add("discount_id[0][" + i + "]", service.getPrice().getTariff().getId());
+			}
+			params.add("seat[0][" + i + "]", service.getSeat().getId());
 		}
 		return sendRequest(template, NEW_ORDER, HttpMethod.POST, null, params,
 				new ParameterizedTypeReference<Response<Order>>() {}).getData();

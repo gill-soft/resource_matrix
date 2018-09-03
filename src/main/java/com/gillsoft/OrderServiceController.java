@@ -1,7 +1,9 @@
 package com.gillsoft;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.HashMap;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
@@ -57,16 +59,16 @@ public class OrderServiceController extends AbstractOrderService {
 		
 		OrderIdModel idModel = new OrderIdModel();
 		for (Entry<String, List<ServiceItem>> item : groupeByTripId(request).entrySet()) {
-			TripIdModel tripId = new TripIdModel().create(item.getKey());
 			try {
-				List<Customer> customers = getOrderCustomers(item.getValue(), request.getCustomers());
-				Order order = client.newOrder(tripId.getIntervalId(), item.getValue().get(0).getPrice().getCurrency(), customers);
+				Order order = client.newOrder(item.getKey(), item.getValue().get(0).getPrice().getCurrency(),
+						request.getCustomers(), item.getValue());
 				List<String> tickets = new ArrayList<>();
 				idModel.getIds().put(order.getHash(), tickets);
-				for (Ticket ticket : order.getTickets().get(tripId.getIntervalId())) {
+				for (Ticket ticket : order.getTickets().get(item.getKey())) {
 					tickets.add(ticket.getHash());
 				}
-				addOrder(response, order, customers);
+				addOrder(response, order, getOrderCustomers(item.getValue(), request.getCustomers()));
+				request.getCustomers().forEach((key, value) -> value.setId(null));
 			} catch (ResponseError e) {
 				for (ServiceItem serviceItem : item.getValue()) {
 					serviceItem.setError(new RestError(e.getMessage()));
@@ -100,19 +102,19 @@ public class OrderServiceController extends AbstractOrderService {
 		for (Entry<String, List<Ticket>> tickets : order.getTickets().entrySet()) {
 			for (Ticket ticket : tickets.getValue()) {
 				ServiceItem serviceItem = new ServiceItem();
-				serviceItem.setId(ticket.getHash());
+				OrderIdModel ticketId = new OrderIdModel();
+				ticketId.getIds().put(order.getHash(), Collections.singletonList(ticket.getHash()));
+				serviceItem.setId(ticketId.asString());
 				serviceItem.setNumber(ticket.getNumber());
 				serviceItem.setPrice(createPrice(ticket));
 				serviceItem.setSeat(createSeat(ticket));
 				
-				Trip trip = search.getTripFromCache(tickets.getKey());
-				TripIdModel id = null;
+				TripIdModel id = new TripIdModel(tickets.getKey(), 0, String.valueOf(ticket.getGeoLocalityFrom()),
+						String.valueOf(ticket.getGeoLocalityTo()), ticket.getDepartAt(), ticket.getCurrency());
+				Trip trip = search.getTripFromCache(id.asString());
 				if (trip != null) {
 					id = new TripIdModel(tickets.getKey(), trip.getRouteId(), String.valueOf(trip.getDepartCityId()),
 							String.valueOf(trip.getArriveCityId()), trip.getDepartDate(), trip.getCurrency());
-				} else {
-					id = new TripIdModel(tickets.getKey(), 0, String.valueOf(ticket.getGeoLocalityFrom()),
-							String.valueOf(ticket.getGeoLocalityTo()), ticket.getDepartAt(), ticket.getCurrency());
 				}
 				String key = id.asString();
 				serviceItem.setSegment(new Segment(key));
@@ -208,6 +210,7 @@ public class OrderServiceController extends AbstractOrderService {
 	}
 	
 	private List<Customer> getOrderCustomers(List<ServiceItem> items, Map<String, Customer> customers) {
+		customers.forEach((key, value) -> value.setId(key));
 		return items.stream().map(item -> customers.get(item.getCustomer().getId())).collect(Collectors.toList());
 	}
 	
@@ -215,7 +218,7 @@ public class OrderServiceController extends AbstractOrderService {
 		Map<String, List<ServiceItem>> trips = new HashMap<>();
 		for (ServiceItem item : request.getServices()) {
 			TripIdModel tripIdModel = new TripIdModel().create(item.getSegment().getId());
-			String tripId = tripIdModel.getId();
+			String tripId = tripIdModel.getIntervalId();
 			List<ServiceItem> items = trips.get(tripId);
 			if (items == null) {
 				items = new ArrayList<>();
@@ -243,6 +246,17 @@ public class OrderServiceController extends AbstractOrderService {
 
 	@Override
 	public OrderResponse getResponse(String orderId) {
+		return getOrder(orderId, null);
+	}
+
+	@Override
+	public OrderResponse getServiceResponse(String serviceId) {
+		OrderIdModel orderIdModel = new OrderIdModel().create(serviceId);
+		return getOrder(serviceId, orderIdModel.getIds().entrySet().iterator().next().getValue().get(0));
+	}
+	
+	private OrderResponse getOrder(String orderId, String selectedTicketId) {
+		
 		// формируем ответ
 		OrderResponse response = createResponse(new HashMap<String, Customer>());
 		response.setOrderId(orderId);
@@ -251,6 +265,16 @@ public class OrderServiceController extends AbstractOrderService {
 		for (String id : orderIdModel.getIds().keySet()) {
 			try {
 				Order order = client.info(id);
+				if (selectedTicketId != null) {
+					for (Entry<String, List<Ticket>> tickets : order.getTickets().entrySet()) {
+						for (Iterator<Ticket> iterator = tickets.getValue().iterator(); iterator.hasNext();) {
+							Ticket ticket = iterator.next();
+							if (!Objects.equals(selectedTicketId, ticket.getHash())) {
+								iterator.remove();
+							}
+						}
+					}
+				}
 				addOrder(response, order, null);
 			} catch (ResponseError e) {
 				for (String ticketId : orderIdModel.getIds().get(id)) {
@@ -259,12 +283,6 @@ public class OrderServiceController extends AbstractOrderService {
 			}
 		}
 		return response;
-	}
-
-	@Override
-	public OrderResponse getServiceResponse(String serviceId) {
-		// TODO Auto-generated method stub
-		return null;
 	}
 
 	@Override
