@@ -53,6 +53,7 @@ public class RestClient {
 	public static final String STATUS_NEW = "new";
 	public static final String STATUS_BUY = "buyout";
 	public static final String STATUS_ANNULMENT = "annulment";
+	public static final String STATUS_RETURNED = "returned";
 	
 	private static final String PING = "/get/ping";
 	private static final String CURRENCIES = "/get/currency-list";
@@ -327,8 +328,9 @@ public class RestClient {
 			if (responseEntity.getBody() == null) {
 				throw new RestClientException("Empty response from resource.");
 			}
-			if (responseEntity.getStatusCode() != HttpStatus.ACCEPTED
-					&& responseEntity.getStatusCode() != HttpStatus.OK) {
+			if ((responseEntity.getStatusCode() != HttpStatus.ACCEPTED
+					&& responseEntity.getStatusCode() != HttpStatus.OK)
+					|| !responseEntity.getBody().isStatus()) {
 				throw new RestClientException(responseEntity.getBody().getError());
 			}
 			return responseEntity.getBody();

@@ -492,11 +492,15 @@ public class SearchServiceController extends SimpleAbstractTripSearchService<Sim
 	@Override
 	public List<ReturnCondition> getConditionsResponse(String tripId, String tariffId) {
 		TripIdModel idModel = new TripIdModel().create(tripId);
+		return getReturnConditions(idModel.getIntervalId());
+	}
+	
+	public List<ReturnCondition> getReturnConditions(String intervalId) {
 		RestClientException exception = null;
 		Map<Lang, List<ReturnRule>> rules = new HashMap<>();
 		for (Lang lang : Lang.values()) {
 			try {
-				rules.put(lang, client.getCachedReturnRules(idModel.getIntervalId(), lang.toString().toLowerCase(), null));
+				rules.put(lang, client.getCachedReturnRules(intervalId, lang.toString().toLowerCase(), null));
 			} catch (IOCacheException e) {
 			} catch (ResponseError e) {
 				exception = new RestClientException(e.getMessage());

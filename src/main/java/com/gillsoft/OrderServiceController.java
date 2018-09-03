@@ -32,6 +32,7 @@ import com.gillsoft.model.Locality;
 import com.gillsoft.model.Organisation;
 import com.gillsoft.model.Price;
 import com.gillsoft.model.RestError;
+import com.gillsoft.model.ReturnCondition;
 import com.gillsoft.model.Seat;
 import com.gillsoft.model.Segment;
 import com.gillsoft.model.ServiceItem;
@@ -195,18 +196,23 @@ public class OrderServiceController extends AbstractOrderService {
 		price.setTariff(tariff);
 		
 		// сборы
-		List<Commission> commissions = new ArrayList<>(ticket.getTicketFee().size());
-		for (Fee fee : ticket.getTicketFee()) {
+		addCommissions(price, ticket.getTicketFee(), false);
+		
+		return price;
+	}
+	
+	private void addCommissions(Price price, List<Fee> fees, boolean calcReturn) {
+		List<Commission> commissions = new ArrayList<>(fees.size());
+		for (Fee fee : fees) {
 			Commission commission = new Commission();
 			commission.setCode(fee.getKind());
 			commission.setName(fee.getName());
-			commission.setValue(fee.getAmount());
+			commission.setValue(calcReturn ? fee.getReturnAmount() : fee.getAmount());
 			commission.setType(ValueType.FIXED);
 			commission.setValueCalcType(fee.isInCarrierTariff() || fee.isInPathTariff() ? CalcType.IN : CalcType.OUT);
 			commissions.add(commission);
 		}
 		price.setCommissions(commissions);
-		return price;
 	}
 	
 	private List<Customer> getOrderCustomers(List<ServiceItem> items, Map<String, Customer> customers) {
@@ -278,7 +284,7 @@ public class OrderServiceController extends AbstractOrderService {
 				addOrder(response, order, null);
 			} catch (ResponseError e) {
 				for (String ticketId : orderIdModel.getIds().get(id)) {
-					addServiceItems(response.getServices(), ticketId, null, new RestError(e.getMessage()));
+					addServiceItem(response.getServices(), ticketId, null, new RestError(e.getMessage()));
 				}
 			}
 		}
@@ -305,11 +311,11 @@ public class OrderServiceController extends AbstractOrderService {
 			try {
 				client.buy(id);
 				for (String ticketId : orderIdModel.getIds().get(id)) {
-					addServiceItems(resultItems, ticketId, true, null);
+					addServiceItem(resultItems, ticketId, true, null);
 				}
 			} catch (ResponseError e) {
 				for (String ticketId : orderIdModel.getIds().get(id)) {
-					addServiceItems(resultItems, ticketId, false, new RestError(e.getMessage()));
+					addServiceItem(resultItems, ticketId, false, new RestError(e.getMessage()));
 				}
 			}
 		}
@@ -318,7 +324,7 @@ public class OrderServiceController extends AbstractOrderService {
 		return response;
 	}
 	
-	private void addServiceItems(List<ServiceItem> resultItems, String ticketId, Boolean confirmed,
+	private void addServiceItem(List<ServiceItem> resultItems, String ticketId, Boolean confirmed,
 			RestError error) {
 		ServiceItem serviceItem = new ServiceItem();
 		serviceItem.setId(ticketId);
@@ -350,7 +356,7 @@ public class OrderServiceController extends AbstractOrderService {
 				}
 			} catch (ResponseError e) {
 				for (String ticketId : orderIdModel.getIds().get(id)) {
-					addServiceItems(resultItems, ticketId, false, new RestError(e.getMessage()));
+					addServiceItem(resultItems, ticketId, false, new RestError(e.getMessage()));
 				}
 			}
 		}
@@ -363,7 +369,7 @@ public class OrderServiceController extends AbstractOrderService {
 			throws ResponseError {
 		if (order.getStatus().equals(checkStatus)) {
 			for (String ticketId : ticketIds) {
-				addServiceItems(services, ticketId, true, null);
+				addServiceItem(services, ticketId, true, null);
 			}
 		} else {
 			throw new ResponseError("Order not canceled. Status = " + order.getStatus());
@@ -372,14 +378,101 @@ public class OrderServiceController extends AbstractOrderService {
 
 	@Override
 	public OrderResponse prepareReturnServicesResponse(OrderRequest request) {
-		// TODO Auto-generated method stub
-		return null;
+		
+		// формируем ответ
+		OrderResponse response = new OrderResponse();
+		List<ServiceItem> resultItems = new ArrayList<>();
+		for (ServiceItem service : request.getServices()) {
+			try {
+				Ticket ticket = client.autoReturnPrice(getTicketId(service.getId()));
+				addReturnPrice(service, ticket);
+			} catch (ResponseError e) {
+				service.setError(new RestError(e.getMessage()));
+			}
+			resultItems.add(service);
+		}
+		response.setServices(resultItems);
+		return response;
+	}
+	
+	private void addReturnPrice(ServiceItem service, Ticket ticket) {
+		Price price = new Price();
+		price.setCurrency(Currency.valueOf(ticket.getCurrency()));
+		price.setAmount(ticket.getAmount());
+		service.setPrice(price);
+		
+		Tariff tariff = new Tariff();
+		tariff.setValue(ticket.getCarrierTariff());
+		price.setTariff(tariff);
+		
+		if (ticket.getTicketReturnFee() != null) {
+			addCommissions(price, ticket.getTicketReturnFee(), true);
+		}
+		service.setPrice(price);
+		
+		// условие возврата
+		addReturnCondition(service.getId(), ticket, tariff);
+	}
+	
+	private void addReturnCondition(String serviceId, Ticket ticket, Tariff tariff) {
+		OrderIdModel orderIdModel = new OrderIdModel().create(serviceId);
+		try {
+			Order order = client.info(orderIdModel.getIds().entrySet().iterator().next().getKey());
+			if (order != null) {
+				String id = orderIdModel.getIds().entrySet().iterator().next().getValue().get(0);
+				out:
+				for (Entry<String, List<Ticket>> tickets : order.getTickets().entrySet()) {
+					for (Iterator<Ticket> iterator = tickets.getValue().iterator(); iterator.hasNext();) {
+						Ticket info = iterator.next();
+						if (Objects.equals(id, info.getHash())) {
+							List<ReturnCondition> conditions = search.getReturnConditions(tickets.getKey());
+							if (conditions != null) {
+								for (ReturnCondition condition : conditions) {
+									if (condition.getMinutesBeforeDepart() == ticket.getReturnRule().getMinutesBeforeDepart()) {
+										tariff.setReturnConditions(Collections.singletonList(condition));
+										break;
+									}
+								}
+							}
+							break out;
+						}
+					}
+				}
+			}
+		} catch (Exception e) {
+		}
+		if (tariff.getReturnConditions() == null) {
+			ReturnCondition condition = new ReturnCondition();
+			condition.setTitle(ticket.getReturnRule().getTitle());
+			condition.setDescription(ticket.getReturnRule().getDescription());
+			condition.setMinutesBeforeDepart(ticket.getReturnRule().getMinutesBeforeDepart());
+			tariff.setReturnConditions(Collections.singletonList(condition));
+		}
 	}
 
 	@Override
 	public OrderResponse returnServicesResponse(OrderRequest request) {
-		// TODO Auto-generated method stub
-		return null;
+		
+		// формируем ответ
+		OrderResponse response = new OrderResponse();
+		List<ServiceItem> resultItems = new ArrayList<>();
+		for (ServiceItem service : request.getServices()) {
+			try {
+				
+				Ticket ticket = client.autoReturn(getTicketId(service.getId()));
+				if (Objects.equals(ticket.getStatus(), RestClient.STATUS_RETURNED)) {
+					addReturnPrice(service, ticket.getTicketReturn());
+					service.setConfirmed(true);
+					resultItems.add(service);
+				} else {
+					throw new ResponseError("Ticket not returned. Status = " + ticket.getStatus());
+				}
+			} catch (ResponseError e) {
+				addServiceItem(resultItems, service.getId(), false, new RestError(e.getMessage()));
+			}
+		}
+		response.setServices(resultItems);
+		return response;
 	}
 
 	@Override
@@ -387,4 +480,9 @@ public class OrderServiceController extends AbstractOrderService {
 		// TODO Auto-generated method stub
 		return null;
 	}
+	
+	private String getTicketId(String serviceId) {
+		return new OrderIdModel().create(serviceId).getIds().entrySet().iterator().next().getValue().get(0);
+	}
+	
 }

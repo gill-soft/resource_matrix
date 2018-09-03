@@ -29,6 +29,10 @@ public class Fee implements Serializable {
     
 	private String from;
 	private BigDecimal amount;
+	
+	@JsonProperty("return_amount")
+	private BigDecimal returnAmount;
+	
 	private String key;
 	private String name;
 	
@@ -110,6 +114,14 @@ public class Fee implements Serializable {
 
 	public void setAmount(BigDecimal amount) {
 		this.amount = amount;
+	}
+
+	public BigDecimal getReturnAmount() {
+		return returnAmount;
+	}
+
+	public void setReturnAmount(BigDecimal returnAmount) {
+		this.returnAmount = returnAmount;
 	}
 
 	public String getKey() {
