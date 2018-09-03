@@ -329,8 +329,45 @@ public class OrderServiceController extends AbstractOrderService {
 
 	@Override
 	public OrderResponse cancelResponse(String orderId) {
-		// TODO Auto-generated method stub
-		return null;
+		
+		// формируем ответ
+		OrderResponse response = new OrderResponse();
+
+		// преобразовываем ид заказа в объкт
+		OrderIdModel orderIdModel = new OrderIdModel().create(orderId);
+		List<ServiceItem> resultItems = new ArrayList<>();
+
+		for (String id : orderIdModel.getIds().keySet()) {
+			try {
+				Order order = client.info(id);
+				if (order.getStatus().equals(RestClient.STATUS_NEW)
+						|| order.getStatus().equals(RestClient.STATUS_BOOKING)) {
+					order = client.cancel(id);
+					checkStatus(order, resultItems, orderIdModel.getIds().get(id), RestClient.STATUS_CANCEL);
+				} else if (order.getStatus().equals(RestClient.STATUS_BUY)) {
+					order = client.annulate(id, "Order error");
+					checkStatus(order, resultItems, orderIdModel.getIds().get(id), RestClient.STATUS_ANNULMENT);
+				}
+			} catch (ResponseError e) {
+				for (String ticketId : orderIdModel.getIds().get(id)) {
+					addServiceItems(resultItems, ticketId, false, new RestError(e.getMessage()));
+				}
+			}
+		}
+		response.setOrderId(orderId);
+		response.setServices(resultItems);
+		return response;
+	}
+	
+	private void checkStatus(Order order, List<ServiceItem> services, List<String> ticketIds, String checkStatus)
+			throws ResponseError {
+		if (order.getStatus().equals(checkStatus)) {
+			for (String ticketId : ticketIds) {
+				addServiceItems(services, ticketId, true, null);
+			}
+		} else {
+			throw new ResponseError("Order not canceled. Status = " + order.getStatus());
+		}
 	}
 
 	@Override

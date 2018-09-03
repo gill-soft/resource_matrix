@@ -48,6 +48,12 @@ public class RestClient {
 	public static final String RULE_CACHE_KEY = "matrix.rule.";
 	public static final String TRIPS_CACHE_KEY = "matrix.trips";
 	
+	public static final String STATUS_CANCEL = "cancel";
+	public static final String STATUS_BOOKING = "booking";
+	public static final String STATUS_NEW = "new";
+	public static final String STATUS_BUY = "buyout";
+	public static final String STATUS_ANNULMENT = "annulment";
+	
 	private static final String PING = "/get/ping";
 	private static final String CURRENCIES = "/get/currency-list";
 	private static final String CITIES = "/get/cities";
