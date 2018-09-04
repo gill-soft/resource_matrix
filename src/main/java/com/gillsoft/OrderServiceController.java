@@ -27,6 +27,8 @@ import com.gillsoft.model.CalcType;
 import com.gillsoft.model.Commission;
 import com.gillsoft.model.Currency;
 import com.gillsoft.model.Customer;
+import com.gillsoft.model.Document;
+import com.gillsoft.model.DocumentType;
 import com.gillsoft.model.Lang;
 import com.gillsoft.model.Locality;
 import com.gillsoft.model.Organisation;
@@ -284,7 +286,7 @@ public class OrderServiceController extends AbstractOrderService {
 				addOrder(response, order, null);
 			} catch (ResponseError e) {
 				for (String ticketId : orderIdModel.getIds().get(id)) {
-					addServiceItem(response.getServices(), ticketId, null, new RestError(e.getMessage()));
+					addServiceItem(response.getServices(), id, ticketId, null, new RestError(e.getMessage()));
 				}
 			}
 		}
@@ -316,7 +318,7 @@ public class OrderServiceController extends AbstractOrderService {
 					Order order = client.reserve(id);
 					List<ServiceItem> reserveItems = new ArrayList<>();
 					for (String ticketId : orderIdModel.getIds().get(id)) {
-						addServiceItem(reserveItems, ticketId, true, null);
+						addServiceItem(reserveItems, id, ticketId, true, null);
 					}
 					for (ServiceItem service : reserveItems) {
 						service.setExpire(order.getReservedTo());
@@ -325,12 +327,12 @@ public class OrderServiceController extends AbstractOrderService {
 				} else {
 					client.buy(id);
 					for (String ticketId : orderIdModel.getIds().get(id)) {
-						addServiceItem(resultItems, ticketId, true, null);
+						addServiceItem(resultItems, id, ticketId, true, null);
 					}
 				}
 			} catch (ResponseError e) {
 				for (String ticketId : orderIdModel.getIds().get(id)) {
-					addServiceItem(resultItems, ticketId, false, new RestError(e.getMessage()));
+					addServiceItem(resultItems, id, ticketId, false, new RestError(e.getMessage()));
 				}
 			}
 		}
@@ -339,10 +341,16 @@ public class OrderServiceController extends AbstractOrderService {
 		return response;
 	}
 	
-	private void addServiceItem(List<ServiceItem> resultItems, String ticketId, Boolean confirmed,
+	private void addServiceItem(List<ServiceItem> resultItems, String orderId, String ticketId, Boolean confirmed,
 			RestError error) {
 		ServiceItem serviceItem = new ServiceItem();
-		serviceItem.setId(ticketId);
+		if (orderId != null) {
+			OrderIdModel model = new OrderIdModel();
+			model.getIds().put(orderId, Collections.singletonList(ticketId));
+			serviceItem.setId(model.asString());
+		} else {
+			serviceItem.setId(ticketId);
+		}
 		serviceItem.setConfirmed(confirmed);
 		serviceItem.setError(error);
 		resultItems.add(serviceItem);
@@ -364,14 +372,14 @@ public class OrderServiceController extends AbstractOrderService {
 				if (order.getStatus().equals(RestClient.STATUS_NEW)
 						|| order.getStatus().equals(RestClient.STATUS_BOOKING)) {
 					order = client.cancel(id);
-					checkStatus(order, resultItems, orderIdModel.getIds().get(id), RestClient.STATUS_CANCEL);
+					checkStatus(order, resultItems, id, orderIdModel.getIds().get(id), RestClient.STATUS_CANCEL);
 				} else if (order.getStatus().equals(RestClient.STATUS_BUY)) {
 					order = client.annulate(id, "Order error");
-					checkStatus(order, resultItems, orderIdModel.getIds().get(id), RestClient.STATUS_ANNULMENT);
+					checkStatus(order, resultItems, id, orderIdModel.getIds().get(id), RestClient.STATUS_ANNULMENT);
 				}
 			} catch (ResponseError e) {
 				for (String ticketId : orderIdModel.getIds().get(id)) {
-					addServiceItem(resultItems, ticketId, false, new RestError(e.getMessage()));
+					addServiceItem(resultItems, id, ticketId, false, new RestError(e.getMessage()));
 				}
 			}
 		}
@@ -380,11 +388,11 @@ public class OrderServiceController extends AbstractOrderService {
 		return response;
 	}
 	
-	private void checkStatus(Order order, List<ServiceItem> services, List<String> ticketIds, String checkStatus)
-			throws ResponseError {
+	private void checkStatus(Order order, List<ServiceItem> services, String orderId, List<String> ticketIds,
+			String checkStatus) throws ResponseError {
 		if (order.getStatus().equals(checkStatus)) {
 			for (String ticketId : ticketIds) {
-				addServiceItem(services, ticketId, true, null);
+				addServiceItem(services, orderId, ticketId, true, null);
 			}
 		} else {
 			throw new ResponseError("Order not canceled. Status = " + order.getStatus());
@@ -483,7 +491,7 @@ public class OrderServiceController extends AbstractOrderService {
 					throw new ResponseError("Ticket not returned. Status = " + ticket.getStatus());
 				}
 			} catch (ResponseError e) {
-				addServiceItem(resultItems, service.getId(), false, new RestError(e.getMessage()));
+				addServiceItem(resultItems, null, service.getId(), false, new RestError(e.getMessage()));
 			}
 		}
 		response.setServices(resultItems);
@@ -492,8 +500,20 @@ public class OrderServiceController extends AbstractOrderService {
 
 	@Override
 	public OrderResponse getPdfDocumentsResponse(OrderRequest request) {
-		// TODO Auto-generated method stub
-		return null;
+		OrderResponse response = new OrderResponse();
+		List<Document> documents = new ArrayList<>();
+		OrderIdModel idModel = new OrderIdModel().create(request.getOrderId());
+		for (String id : idModel.getIds().keySet()) {
+			String base64 = client.getTickets(id);
+			if (base64 != null) {
+				Document document = new Document();
+				document.setType(DocumentType.TICKET);
+				document.setBase64(base64);
+				documents.add(document);
+			}
+		}
+		response.setDocuments(documents);
+		return response;
 	}
 	
 	private String getTicketId(String serviceId) {

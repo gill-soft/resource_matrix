@@ -1,6 +1,10 @@
 package com.gillsoft.client;
 
+import java.io.ByteArrayOutputStream;
+import java.io.IOException;
+import java.io.InputStream;
 import java.net.URI;
+import java.text.MessageFormat;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Date;
@@ -17,6 +21,7 @@ import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.beans.factory.config.ConfigurableBeanFactory;
 import org.springframework.context.annotation.Scope;
 import org.springframework.core.ParameterizedTypeReference;
+import org.springframework.core.io.Resource;
 import org.springframework.http.HttpMethod;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.RequestEntity;
@@ -355,6 +360,25 @@ public class RestClient {
 		Collections.sort(values);
 		values.add(0, key);
 		return String.join(".", values);
+	}
+	
+	public String getTickets(String orderId) {
+		URI uri = UriComponentsBuilder.fromUriString(Config.getUrl()
+				+ MessageFormat.format(PRINT_TICKETS, orderId)).build().toUri();
+		RequestEntity<Object> requestEntity = new RequestEntity<>(null, HttpMethod.GET, uri);
+		ResponseEntity<Resource> response = template.exchange(requestEntity, Resource.class);
+		try {
+			InputStream in = response.getBody().getInputStream();
+			ByteArrayOutputStream out = new ByteArrayOutputStream();
+			byte[] buffer = new byte[256];
+			while (in.read(buffer) != -1) {
+				out.write(buffer);
+			}
+			return StringUtil.toBase64(out.toByteArray());
+		} catch (IOException e) {
+			e.printStackTrace();
+		}
+		return null;
 	}
 
 }
