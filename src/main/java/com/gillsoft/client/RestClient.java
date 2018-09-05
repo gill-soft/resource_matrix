@@ -34,6 +34,9 @@ import org.springframework.web.client.RestClientException;
 import org.springframework.web.client.RestTemplate;
 import org.springframework.web.util.UriComponentsBuilder;
 
+import com.fasterxml.jackson.core.type.TypeReference;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.ObjectReader;
 import com.gillsoft.cache.CacheHandler;
 import com.gillsoft.cache.IOCacheException;
 import com.gillsoft.cache.RedisMemoryCache;
@@ -325,7 +328,7 @@ public class RestClient {
 	}
 	
 	private <T> Response<T> sendRequest(RestTemplate template, String uriMethod, HttpMethod httpMethod, Object request,
-			MultiValueMap<String, String> params,  ParameterizedTypeReference<Response<T>> typeReference) throws ResponseError {
+			MultiValueMap<String, String> params, ParameterizedTypeReference<Response<T>> typeReference) throws ResponseError {
 		URI uri = UriComponentsBuilder.fromUriString(Config.getUrl() + uriMethod).queryParams(params).build().toUri();
 		RequestEntity<Object> requestEntity = new RequestEntity<>(request, httpMethod, uri);
 		try {
@@ -362,7 +365,7 @@ public class RestClient {
 		return String.join(".", values);
 	}
 	
-	public String getTickets(String orderId) {
+	public String getTickets(String orderId) throws ResponseError {
 		URI uri = UriComponentsBuilder.fromUriString(Config.getUrl()
 				+ MessageFormat.format(PRINT_TICKETS, orderId)).build().toUri();
 		RequestEntity<Object> requestEntity = new RequestEntity<>(null, HttpMethod.GET, uri);
@@ -370,15 +373,26 @@ public class RestClient {
 		try {
 			InputStream in = response.getBody().getInputStream();
 			ByteArrayOutputStream out = new ByteArrayOutputStream();
+			checkError(out.toByteArray());
 			byte[] buffer = new byte[256];
 			while (in.read(buffer) != -1) {
 				out.write(buffer);
 			}
 			return StringUtil.toBase64(out.toByteArray());
 		} catch (IOException e) {
-			e.printStackTrace();
+			throw new ResponseError(e.getMessage());
 		}
-		return null;
+	}
+	
+	private void checkError(byte[] bytes) throws ResponseError {
+		ObjectReader reader = new ObjectMapper().readerFor(new TypeReference<Response<String>>() { });
+		try {
+			Response<String> response = reader.readValue(bytes);
+			if (response.getError() != null) {
+				throw new ResponseError(response.getError());
+			}
+		} catch (IOException e) {
+		}
 	}
 
 }

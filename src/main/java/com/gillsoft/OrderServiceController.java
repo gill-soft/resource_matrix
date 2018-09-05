@@ -504,12 +504,18 @@ public class OrderServiceController extends AbstractOrderService {
 		List<Document> documents = new ArrayList<>();
 		OrderIdModel idModel = new OrderIdModel().create(request.getOrderId());
 		for (String id : idModel.getIds().keySet()) {
-			String base64 = client.getTickets(id);
-			if (base64 != null) {
-				Document document = new Document();
-				document.setType(DocumentType.TICKET);
-				document.setBase64(base64);
-				documents.add(document);
+			try {
+				String base64 = client.getTickets(id);
+				if (base64 != null) {
+					Document document = new Document();
+					document.setType(DocumentType.TICKET);
+					document.setBase64(base64);
+					documents.add(document);
+				}
+			} catch (ResponseError e) {
+				for (String ticketId : idModel.getIds().get(id)) {
+					addServiceItem(response.getServices(), id, ticketId, null, new RestError(e.getMessage()));
+				}
 			}
 		}
 		response.setDocuments(documents);
