@@ -38,7 +38,7 @@ public class ResourceServiceController extends AbstractResourceService {
 		addMethod(methods, "Return search result", Method.SEARCH, MethodType.GET);
 		addMethod(methods, "Return trip route", Method.SEARCH_TRIP_ROUTE, MethodType.GET);
 		addMethod(methods, "Return trip tariffs", Method.SEARCH_TRIP_TARIFFS, MethodType.GET);
-		addMethod(methods, "Return tariff return conditions", Method.SEARCH_TRIP_CONDITIONS, MethodType.GET);
+		addMethod(methods, "Return the list of return conditions for selected tariff", Method.SEARCH_TRIP_CONDITIONS, MethodType.GET);
 		addMethod(methods, "Return the list of seats on trip", Method.SEARCH_TRIP_SEATS, MethodType.GET);
 		addMethod(methods, "Return the scheme of seats on trip", Method.SEARCH_TRIP_SEATS_SCHEME, MethodType.GET);
 		addMethod(methods, "Return required fields to create order", Method.SEARCH_TRIP_REQUIRED, MethodType.GET);
