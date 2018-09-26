@@ -273,7 +273,7 @@ public class SearchServiceController extends SimpleAbstractTripSearchService<Sim
 			route.setType(RouteType.valueOf(routeInfo.getRoute().getType().toUpperCase()));
 		} catch (Exception e) {
 		}
-		route.setPath(new ArrayList<>(routeInfo.getRoute().getPath().size()));
+		List<RoutePoint> path = new ArrayList<>(routeInfo.getRoute().getPath().size());
 		for (PathPoint point : routeInfo.getRoute().getPath()) {
 			RoutePoint routePoint = new RoutePoint();
 			routePoint.setDistance(point.getDistance());
@@ -282,8 +282,9 @@ public class SearchServiceController extends SimpleAbstractTripSearchService<Sim
 			routePoint.setDepartureTime(point.getDepartTime());
 			routePoint.setArrivalTime(point.getArriveTime());
 			routePoint.setLocality(createRouteLocality(localities, point.getGeo().getPoint(), point.getGeo().getLocality().getId()));
-			route.getPath().add(routePoint);
+			path.add(routePoint);
 		}
+		route.setPath(path);
 		return route;
 	}
 	

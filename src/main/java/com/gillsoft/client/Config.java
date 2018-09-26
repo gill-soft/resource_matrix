@@ -31,6 +31,10 @@ public class Config {
 	public static String getLogin() {
 		return properties.getProperty("login");
 	}
+	
+	public static String getScheduleUrl() {
+		return properties.getProperty("schedule.url");
+	}
 
 	public static int getRequestTimeout() {
 		return Integer.valueOf(properties.getProperty("request.timeout"));
@@ -58,6 +62,10 @@ public class Config {
 
 	public static long getCacheStationsUpdateDelay() {
 		return Long.valueOf(properties.getProperty("cache.stations.update.delay"));
+	}
+	
+	public static long getCacheScheduleUpdateDelay() {
+		return Long.valueOf(properties.getProperty("cache.schedule.update.delay"));
 	}
 
 	public static long getCacheRouteTimeToLive() {

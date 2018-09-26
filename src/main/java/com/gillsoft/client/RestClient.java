@@ -44,6 +44,7 @@ import com.gillsoft.logging.SimpleRequestResponseLoggingInterceptor;
 import com.gillsoft.model.Currency;
 import com.gillsoft.model.Customer;
 import com.gillsoft.model.ServiceItem;
+import com.gillsoft.model.response.ScheduleResponse;
 import com.gillsoft.util.RestTemplateUtil;
 import com.gillsoft.util.StringUtil;
 
@@ -55,6 +56,7 @@ public class RestClient {
 	public static final String ROUTE_CACHE_KEY = "matrix.route.";
 	public static final String RULE_CACHE_KEY = "matrix.rule.";
 	public static final String TRIPS_CACHE_KEY = "matrix.trips";
+	public static final String SCHEDULE_CACHE_KEY = "matrix.schedule";
 	
 	public static final String STATUS_CANCEL = "cancel";
 	public static final String STATUS_BOOKING = "booking";
@@ -392,6 +394,28 @@ public class RestClient {
 				throw new ResponseError(response.getError());
 			}
 		} catch (IOException e) {
+		}
+	}
+	
+	public ScheduleResponse getSchedule() throws ResponseError {
+		URI uri = UriComponentsBuilder.fromUriString(Config.getScheduleUrl()).build().toUri();
+		RequestEntity<Object> requestEntity = new RequestEntity<>(HttpMethod.GET, uri);
+		try {
+			ResponseEntity<ScheduleResponse> responseEntity = template.exchange(requestEntity, ScheduleResponse.class);
+			if (responseEntity.getBody() == null) {
+				throw new RestClientException("Empty response from resource.");
+			}
+			return responseEntity.getBody();
+		} catch (RestClientException e) {
+			throw new ResponseError(e.getMessage());
+		}
+	}
+	
+	public ScheduleResponse getCachedSchedule() throws IOCacheException {
+		try {
+			return getCachedObject(SCHEDULE_CACHE_KEY, new ScheduleUpdateTask());
+		} catch (ResponseError e) {
+			return null;
 		}
 	}
 
