@@ -6,6 +6,8 @@ import java.util.Map;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonInclude.Include;
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.gillsoft.util.StringUtil;
 
 @JsonInclude(value = Include.NON_NULL)
 public class Response<T> implements Serializable {
@@ -37,7 +39,12 @@ public class Response<T> implements Serializable {
 	}
 
 	public String getError() {
-		return error;
+		try {
+			return error + ": "
+					+ (messages != null ? StringUtil.objectToJsonString(messages) : "");
+		} catch (JsonProcessingException e) {
+			return error;
+		}
 	}
 
 	public void setError(String error) {

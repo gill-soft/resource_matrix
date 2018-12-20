@@ -442,6 +442,8 @@ public class SearchServiceController extends SimpleAbstractTripSearchService<Sim
 					}
 				}
 			}
+			fields.add(RequiredField.SEAT);
+			fields.add(RequiredField.TARIFF);
 			return fields;
 		}
 		return null;

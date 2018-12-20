@@ -63,7 +63,7 @@ public class OrderServiceController extends AbstractOrderService {
 		OrderIdModel idModel = new OrderIdModel();
 		for (Entry<String, List<ServiceItem>> item : groupeByTripId(request).entrySet()) {
 			try {
-				Order order = client.newOrder(item.getKey(), item.getValue().get(0).getPrice().getCurrency(),
+				Order order = client.newOrder(item.getKey(), request.getCurrency(),
 						request.getCustomers(), item.getValue());
 				List<String> tickets = new ArrayList<>();
 				idModel.getIds().put(order.getHash(), tickets);
@@ -79,7 +79,7 @@ public class OrderServiceController extends AbstractOrderService {
 				}
 			}
 		}
-		response.setId(idModel.asString());
+		response.setOrderId(idModel.asString());
 		return response;
 	}
 	
@@ -295,15 +295,15 @@ public class OrderServiceController extends AbstractOrderService {
 
 	@Override
 	public OrderResponse bookingResponse(String orderId) {
-		return coonfirmOrder(orderId, true);
+		return confirmOrder(orderId, true);
 	}
 
 	@Override
 	public OrderResponse confirmResponse(String orderId) {
-		return coonfirmOrder(orderId, false);
+		return confirmOrder(orderId, false);
 	}
 	
-	private OrderResponse coonfirmOrder(String orderId, boolean reserve) {
+	private OrderResponse confirmOrder(String orderId, boolean reserve) {
 		
 		// формируем ответ
 		OrderResponse response = new OrderResponse();
