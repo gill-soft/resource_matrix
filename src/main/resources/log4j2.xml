@@ -2,7 +2,7 @@
 <Configuration monitorInterval="10" strict="true">
 	<Properties>
 		<Property name="baseDir" value="/opt/tomcat/logs" />
-		<Property name="filename" value="${baseDir}/matrix.log" />
+		<Property name="filename" value="${baseDir}/resource-matrix.log" />
 	</Properties>
 	<Appenders>
 		<Console name="STDOUT" target="SYSTEM_OUT">

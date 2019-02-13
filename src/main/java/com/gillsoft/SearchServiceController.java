@@ -291,6 +291,7 @@ public class SearchServiceController extends SimpleAbstractTripSearchService<Sim
 	private Locality createRouteLocality(Map<String, Locality> localities, Point point, int parentId) {
 		String key = String.valueOf(point.getId());
 		Locality station = new Locality();
+		station.setId(String.valueOf(point.getId()));
 		station.setLatitude(point.getLatitude());
 		station.setLongitude(point.getLongitude());
 		for (Entry<String, Parameters> entry : point.getI18n().entrySet()) {

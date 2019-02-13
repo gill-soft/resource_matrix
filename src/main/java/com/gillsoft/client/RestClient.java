@@ -164,12 +164,12 @@ public class RestClient {
 			}
 		}
 		if (currency == null) {
-			return currencies.iterator().next();
+			return null;
 		}
 		if (currencies.contains(currency.toString())) {
 			return currency.toString();
 		}
-		return currencies.iterator().next();
+		return null;
 	}
 	
 	public List<Trip> getCachedTrips(String departLocality, String arriveLocality, Date departDate, String currency)
