@@ -1,5 +1,6 @@
 package com.gillsoft;
 
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -17,8 +18,10 @@ import com.gillsoft.client.City;
 import com.gillsoft.client.RestClient;
 import com.gillsoft.model.Lang;
 import com.gillsoft.model.Locality;
+import com.gillsoft.model.ScheduleRoute;
+import com.gillsoft.model.ScheduleRoutePoint;
 import com.gillsoft.model.request.LocalityRequest;
-import com.gillsoft.util.RestTemplateUtil;
+import com.gillsoft.model.response.ScheduleResponse;
 
 @RestController
 public class LocalityServiceController extends AbstractLocalityService {
@@ -27,6 +30,9 @@ public class LocalityServiceController extends AbstractLocalityService {
 	
 	@Autowired
 	private RestClient client;
+	
+	@Autowired
+	private ScheduleServiceController controller;
 
 	@Override
 	public List<Locality> getAllResponse(LocalityRequest arg0) {
@@ -36,7 +42,31 @@ public class LocalityServiceController extends AbstractLocalityService {
 
 	@Override
 	public Map<String, List<String>> getBindingResponse(LocalityRequest arg0) {
-		throw RestTemplateUtil.createUnavailableMethod();
+		Map<String, List<String>> binding = new HashMap<>();
+		ScheduleResponse response = controller.getScheduleResponse(null);
+		if (response != null
+				&& response.getRoutes() != null) {
+			List<ScheduleRoute> routes = response.getRoutes();
+			for (ScheduleRoute route : routes) {
+				for (int i = 0; i < route.getPath().size() - 1; i++) {
+					ScheduleRoutePoint point = (ScheduleRoutePoint) route.getPath().get(i);
+					if (point.getDestinations() != null) {
+						List<String> tos = binding.get(point.getLocality().getParent().getId());
+						if (tos == null) {
+							tos = new ArrayList<>();
+							binding.put(point.getLocality().getParent().getId(), tos);
+						}
+						for (ScheduleRoutePoint dest : point.getDestinations()) {
+							String id = route.getPath().get(dest.getIndex()).getLocality().getParent().getId();
+							if (!tos.contains(id)) {
+								tos.add(id);
+							}
+						}
+					}
+				}
+			}
+		}
+		return binding;
 	}
 
 	@Override

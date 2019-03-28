@@ -32,6 +32,7 @@ public class ResourceServiceController extends AbstractResourceService {
 		// localities
 		addMethod(methods, "All available resource localities", Method.LOCALITY_ALL, MethodType.POST);
 		addMethod(methods, "All used resource localities", Method.LOCALITY_USED, MethodType.POST);
+		addMethod(methods, "Binding from resource localities", Method.LOCALITY_BINDING, MethodType.POST);
 		
 		// search
 		addMethod(methods, "Init search", Method.SEARCH, MethodType.POST);
