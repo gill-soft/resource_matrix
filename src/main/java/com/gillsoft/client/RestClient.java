@@ -12,6 +12,7 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Map.Entry;
 import java.util.Objects;
 import java.util.Set;
 import java.util.stream.Collectors;
@@ -359,8 +360,8 @@ public class RestClient {
 	
 	public static String getCacheKey(String key, MultiValueMap<String, String> params) {
 		List<String> values = new ArrayList<>();
-		for (List<String> list : params.values()) {
-			values.addAll(list.stream().filter(param -> param != null).collect(Collectors.toList()));
+		for (Entry<String, List<String>> entry : params.entrySet()) {
+			values.addAll(entry.getValue().stream().filter(param -> param != null).map(p -> entry.getKey() + "=" + p).collect(Collectors.toList()));
 		}
 		Collections.sort(values);
 		values.add(0, key);
