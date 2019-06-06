@@ -60,6 +60,7 @@ public class RestClient {
 	public static final String SCHEDULE_CACHE_KEY = "matrix.schedule";
 	
 	public static final String STATUS_CANCEL = "cancel";
+	public static final String STATUS_SYSTEM_CANCEL = "system cancel";
 	public static final String STATUS_BOOKING = "booking";
 	public static final String STATUS_NEW = "new";
 	public static final String STATUS_BUY = "buyout";

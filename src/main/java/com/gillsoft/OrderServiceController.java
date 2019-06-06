@@ -376,6 +376,15 @@ public class OrderServiceController extends AbstractOrderService {
 				} else if (order.getStatus().equals(RestClient.STATUS_BUY)) {
 					order = client.annulate(id, "Order error");
 					checkStatus(order, resultItems, id, orderIdModel.getIds().get(id), RestClient.STATUS_ANNULMENT);
+				} else if (order.getStatus().equals(RestClient.STATUS_CANCEL)
+						|| order.getStatus().equals(RestClient.STATUS_SYSTEM_CANCEL)) {
+					for (String ticketId : orderIdModel.getIds().get(id)) {
+						addServiceItem(resultItems, id, ticketId, true, null);
+					}
+				} else {
+					for (String ticketId : orderIdModel.getIds().get(id)) {
+						addServiceItem(resultItems, id, ticketId, false, null);
+					}
 				}
 			} catch (ResponseError e) {
 				for (String ticketId : orderIdModel.getIds().get(id)) {
