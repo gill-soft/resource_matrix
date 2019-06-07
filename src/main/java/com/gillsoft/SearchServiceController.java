@@ -443,6 +443,9 @@ public class SearchServiceController extends SimpleAbstractTripSearchService<Sim
 					}
 				}
 			}
+			if (trip.isInternational()) {
+				fields.add(RequiredField.ONLY_LATIN);
+			}
 			fields.add(RequiredField.SEAT);
 			fields.add(RequiredField.TARIFF);
 			return fields;
