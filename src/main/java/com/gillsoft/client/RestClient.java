@@ -374,17 +374,21 @@ public class RestClient {
 				+ MessageFormat.format(PRINT_TICKETS, orderId)).build().toUri();
 		RequestEntity<Object> requestEntity = new RequestEntity<>(null, HttpMethod.GET, uri);
 		ResponseEntity<Resource> response = template.exchange(requestEntity, Resource.class);
-		try {
-			InputStream in = response.getBody().getInputStream();
-			ByteArrayOutputStream out = new ByteArrayOutputStream();
-			checkError(out.toByteArray());
-			byte[] buffer = new byte[256];
-			while (in.read(buffer) != -1) {
-				out.write(buffer);
+		if (response.getStatusCode().is2xxSuccessful()) { 
+			try {
+				InputStream in = response.getBody().getInputStream();
+				ByteArrayOutputStream out = new ByteArrayOutputStream();
+				checkError(out.toByteArray());
+				byte[] buffer = new byte[256];
+				while (in.read(buffer) != -1) {
+					out.write(buffer);
+				}
+				return StringUtil.toBase64(out.toByteArray());
+			} catch (IOException e) {
+				throw new ResponseError(e.getMessage());
 			}
-			return StringUtil.toBase64(out.toByteArray());
-		} catch (IOException e) {
-			throw new ResponseError(e.getMessage());
+		} else {
+			throw new ResponseError("Error: " + response.getStatusCodeValue());
 		}
 	}
 	
