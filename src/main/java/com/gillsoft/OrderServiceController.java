@@ -189,7 +189,7 @@ public class OrderServiceController extends AbstractOrderService {
 				}
 			}
 		}
-		tariff.setValue(ticket.getTariff());
+		tariff.setValue(ticket.getCost());
 		
 		// стоимость
 		Price price = new Price();
@@ -211,7 +211,7 @@ public class OrderServiceController extends AbstractOrderService {
 			commission.setName(fee.getName());
 			commission.setValue(calcReturn ? fee.getReturnAmount() : fee.getAmount());
 			commission.setType(ValueType.FIXED);
-			commission.setValueCalcType(fee.isInCarrierTariff() || fee.isInPathTariff() ? CalcType.IN : CalcType.OUT);
+			commission.setValueCalcType(CalcType.IN);
 			commissions.add(commission);
 		}
 		price.setCommissions(commissions);
