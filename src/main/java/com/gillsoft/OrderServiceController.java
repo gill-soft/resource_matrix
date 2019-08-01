@@ -1,5 +1,7 @@
 package com.gillsoft;
 
+import java.math.BigDecimal;
+import java.math.RoundingMode;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
@@ -448,6 +450,7 @@ public class OrderServiceController extends AbstractOrderService {
 	
 	private void addReturnCondition(String serviceId, Ticket ticket, Tariff tariff) {
 		OrderIdModel orderIdModel = new OrderIdModel().create(serviceId);
+		BigDecimal ticketCost = null;
 		try {
 			Order order = client.info(orderIdModel.getIds().entrySet().iterator().next().getKey());
 			if (order != null) {
@@ -457,10 +460,12 @@ public class OrderServiceController extends AbstractOrderService {
 					for (Iterator<Ticket> iterator = tickets.getValue().iterator(); iterator.hasNext();) {
 						Ticket info = iterator.next();
 						if (Objects.equals(id, info.getHash())) {
+							ticketCost = info.getCost();
 							List<ReturnCondition> conditions = search.getReturnConditions(tickets.getKey());
 							if (conditions != null) {
 								for (ReturnCondition condition : conditions) {
 									if (condition.getMinutesBeforeDepart() == ticket.getReturnRule().getMinutesBeforeDepart()) {
+										condition.setReturnPercent(ticket.getAmount().divide(ticketCost, 2, RoundingMode.HALF_EVEN).multiply(new BigDecimal(100)));
 										tariff.setReturnConditions(Collections.singletonList(condition));
 										break;
 									}
@@ -478,6 +483,9 @@ public class OrderServiceController extends AbstractOrderService {
 			condition.setTitle(ticket.getReturnRule().getTitle());
 			condition.setDescription(ticket.getReturnRule().getDescription());
 			condition.setMinutesBeforeDepart(ticket.getReturnRule().getMinutesBeforeDepart());
+			if (ticketCost != null) {
+				condition.setReturnPercent(ticket.getAmount().divide(ticketCost, 2, RoundingMode.HALF_EVEN).multiply(new BigDecimal(100)));
+			}
 			tariff.setReturnConditions(Collections.singletonList(condition));
 		}
 	}
