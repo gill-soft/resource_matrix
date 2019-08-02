@@ -534,6 +534,7 @@ public class SearchServiceController extends SimpleAbstractTripSearchService<Sim
 				condition.setTitle(returnRules.getKey(), rule.getTitle());
 				condition.setDescription(returnRules.getKey(), rule.getDescription());
 				condition.setMinutesBeforeDepart(rule.getMinutesBeforeDepart());
+				condition.setReturnPercent(new BigDecimal(rule.getValue()));
 			}
 		}
 		return new ArrayList<>(returnConditions.values());

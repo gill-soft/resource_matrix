@@ -19,6 +19,8 @@ public class ReturnRule implements Serializable {
 	
 	@JsonFormat(shape = Shape.STRING, pattern = "yyyy-MM-dd HH:mm:ss")
 	private Date activeTo;
+	
+	private int value;
 
 	public String getTitle() {
 		return title;
@@ -50,6 +52,14 @@ public class ReturnRule implements Serializable {
 
 	public void setActiveTo(Date activeTo) {
 		this.activeTo = activeTo;
+	}
+
+	public int getValue() {
+		return value;
+	}
+
+	public void setValue(int value) {
+		this.value = value;
 	}
 
 }
