@@ -27,6 +27,7 @@ import com.gillsoft.model.response.ScheduleResponse;
 public class LocalityServiceController extends AbstractLocalityService {
 	
 	public static List<Locality> all;
+	public static List<Locality> used;
 	
 	@Autowired
 	private RestClient client;
@@ -35,13 +36,13 @@ public class LocalityServiceController extends AbstractLocalityService {
 	private ScheduleServiceController controller;
 
 	@Override
-	public List<Locality> getAllResponse(LocalityRequest arg0) {
+	public List<Locality> getAllResponse(LocalityRequest request) {
 		createLocalities();
 		return all;
 	}
 
 	@Override
-	public Map<String, List<String>> getBindingResponse(LocalityRequest arg0) {
+	public Map<String, List<String>> getBindingResponse(LocalityRequest request) {
 		Map<String, List<String>> binding = new HashMap<>();
 		ScheduleResponse response = controller.getScheduleResponse(null);
 		if (response != null
@@ -70,9 +71,9 @@ public class LocalityServiceController extends AbstractLocalityService {
 	}
 
 	@Override
-	public List<Locality> getUsedResponse(LocalityRequest arg0) {
+	public List<Locality> getUsedResponse(LocalityRequest request) {
 		createLocalities();
-		return all;
+		return used;
 	}
 	
 	@Scheduled(initialDelay = 60000, fixedDelay = 900000)
@@ -87,6 +88,12 @@ public class LocalityServiceController extends AbstractLocalityService {
 					List<Locality> all = new CopyOnWriteArrayList<>();
 					all.addAll(localities.values());
 					LocalityServiceController.all = all;
+					ScheduleResponse response = controller.getScheduleResponse(null);
+					if (response != null
+							&& response.getParents() != null) {
+						response.getParents().forEach((id, l) -> l.setId(id));
+						used = new CopyOnWriteArrayList<>(response.getParents().values());
+					}
 				}
 			}
 		}
