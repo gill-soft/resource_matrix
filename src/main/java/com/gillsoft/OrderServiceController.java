@@ -465,7 +465,7 @@ public class OrderServiceController extends AbstractOrderService {
 							if (conditions != null) {
 								for (ReturnCondition condition : conditions) {
 									if (condition.getMinutesBeforeDepart() == ticket.getReturnRule().getMinutesBeforeDepart()) {
-										condition.setReturnPercent(ticket.getAmount().divide(ticketCost, 2, RoundingMode.HALF_EVEN).multiply(new BigDecimal(100)));
+										condition.setReturnPercent(ticket.getAmount().divide(ticketCost, 2, RoundingMode.HALF_UP).multiply(new BigDecimal(100)));
 										tariff.setReturnConditions(Collections.singletonList(condition));
 										break;
 									}
@@ -484,7 +484,7 @@ public class OrderServiceController extends AbstractOrderService {
 			condition.setDescription(ticket.getReturnRule().getDescription());
 			condition.setMinutesBeforeDepart(ticket.getReturnRule().getMinutesBeforeDepart());
 			if (ticketCost != null) {
-				condition.setReturnPercent(ticket.getAmount().divide(ticketCost, 2, RoundingMode.HALF_EVEN).multiply(new BigDecimal(100)));
+				condition.setReturnPercent(ticket.getAmount().divide(ticketCost, 2, RoundingMode.HALF_UP).multiply(new BigDecimal(100)));
 			}
 			tariff.setReturnConditions(Collections.singletonList(condition));
 		}
