@@ -1,11 +1,8 @@
 package com.gillsoft.client;
 
 import java.io.Serializable;
-import java.util.Date;
 
-import com.fasterxml.jackson.annotation.JsonFormat;
 import com.fasterxml.jackson.annotation.JsonInclude;
-import com.fasterxml.jackson.annotation.JsonFormat.Shape;
 import com.fasterxml.jackson.annotation.JsonInclude.Include;
 
 @JsonInclude(value = Include.NON_NULL)
@@ -16,10 +13,7 @@ public class ReturnRule implements Serializable {
 	private String title;
 	private String description;
 	private int minutesBeforeDepart;
-	
-	@JsonFormat(shape = Shape.STRING, pattern = "yyyy-MM-dd HH:mm:ss")
-	private Date activeTo;
-	
+	private String activeTo;
 	private int value;
 
 	public String getTitle() {
@@ -46,11 +40,11 @@ public class ReturnRule implements Serializable {
 		this.minutesBeforeDepart = minutesBeforeDepart;
 	}
 
-	public Date getActiveTo() {
+	public String getActiveTo() {
 		return activeTo;
 	}
 
-	public void setActiveTo(Date activeTo) {
+	public void setActiveTo(String activeTo) {
 		this.activeTo = activeTo;
 	}
 
