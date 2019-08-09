@@ -31,6 +31,8 @@ public class PathPoint implements Serializable {
 
 	@JsonProperty("arrive_time")
 	private String arriveTime;
+	
+	private boolean dockingPoint;
 
 	private int distance;
 	private String platform;
@@ -91,6 +93,14 @@ public class PathPoint implements Serializable {
 
 	public void setArriveTime(String arriveTime) {
 		this.arriveTime = arriveTime;
+	}
+
+	public boolean isDockingPoint() {
+		return dockingPoint;
+	}
+
+	public void setDockingPoint(boolean dockingPoint) {
+		this.dockingPoint = dockingPoint;
 	}
 
 	public int getDistance() {

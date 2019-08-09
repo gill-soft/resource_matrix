@@ -284,6 +284,10 @@ public class SearchServiceController extends SimpleAbstractTripSearchService<Sim
 			routePoint.setArrivalDay(point.getArriveDay());
 			routePoint.setDepartureTime(point.getDepartTime());
 			routePoint.setArrivalTime(point.getArriveTime());
+			if (point.isDockingPoint()) {
+				routePoint.setTransfer(true);
+				route.setType(RouteType.COMPOSITE);
+			}
 			routePoint.setLocality(createRouteLocality(localities, point.getGeo().getPoint(), point.getGeo().getLocality().getId()));
 			path.add(routePoint);
 		}
