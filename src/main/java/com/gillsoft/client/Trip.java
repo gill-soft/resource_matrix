@@ -17,7 +17,7 @@ import com.fasterxml.jackson.annotation.JsonInclude.Include;
 @JsonInclude(value = Include.NON_NULL)
 public class Trip implements Serializable {
 	
-	private static final long serialVersionUID = -3015444050776850171L;
+	private static final long serialVersionUID = 1191207552346466461L;
 	
 	private String tripId;
 	private String routeId;
