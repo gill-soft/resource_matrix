@@ -265,9 +265,12 @@ public class SearchServiceController extends SimpleAbstractTripSearchService<Sim
 		return price;
 	}
 	
-	private Route createRoute(RouteInfo routeInfo, int routeId, Map<String, Locality> localities) {
+	private Route createRoute(RouteInfo routeInfo, String routeId, Map<String, Locality> localities) {
+		if (routeInfo == null) {
+			return null;
+		}
 		Route route = new Route();
-		route.setId(String.valueOf(routeId));
+		route.setId(routeId);
 		route.setName(routeInfo.getRoute().getCode());
 		try {
 			route.setType(RouteType.valueOf(routeInfo.getRoute().getType().toUpperCase()));
@@ -541,6 +544,9 @@ public class SearchServiceController extends SimpleAbstractTripSearchService<Sim
 	}
 	
 	private List<ReturnCondition> createReturnConditions(String returnPolicy) {
+		if (returnPolicy == null) {
+			return null;
+		}
 		List<ReturnCondition> returnConditions = new ArrayList<>();
 		String[] policies = returnPolicy.split("((<|</|)\\w+>)");
 		for (String policy : policies) {

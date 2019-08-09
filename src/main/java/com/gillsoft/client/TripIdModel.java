@@ -10,7 +10,7 @@ public class TripIdModel extends AbstractJsonModel {
 
 	private String intervalId;
 
-	private int routeId;
+	private String routeId;
 
 	private String from;
 
@@ -24,7 +24,7 @@ public class TripIdModel extends AbstractJsonModel {
 
 	}
 
-	public TripIdModel(String intervalId, int routeId, String from, String to, Date date, String currency) {
+	public TripIdModel(String intervalId, String routeId, String from, String to, Date date, String currency) {
 		this.intervalId = intervalId;
 		this.routeId = routeId;
 		this.from = from;
@@ -41,11 +41,11 @@ public class TripIdModel extends AbstractJsonModel {
 		this.intervalId = intervalId;
 	}
 
-	public int getRouteId() {
+	public String getRouteId() {
 		return routeId;
 	}
 
-	public void setRouteId(int routeId) {
+	public void setRouteId(String routeId) {
 		this.routeId = routeId;
 	}
 

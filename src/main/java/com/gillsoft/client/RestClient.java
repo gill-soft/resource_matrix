@@ -185,8 +185,18 @@ public class RestClient {
 	}
 	
 	public RouteInfo getRoute(MultiValueMap<String, String> params) throws ResponseError {
-		return sendRequest(searchTemplate, ROUTE, HttpMethod.POST, null, params,
-				new ParameterizedTypeReference<Response<RouteInfo>>() {}).getData();
+		try {
+			return sendRequest(searchTemplate, ROUTE, HttpMethod.POST, null, params,
+					new ParameterizedTypeReference<Response<RouteInfo>>() {}).getData();
+		} catch (ResponseError e) {
+			List<RouteInfo> routeList = sendRequest(searchTemplate, ROUTE, HttpMethod.POST, null, params,
+					new ParameterizedTypeReference<Response<List<RouteInfo>>>() {}).getData();
+			if (routeList != null
+					&& !routeList.isEmpty()) {
+				return routeList.get(0);
+			}
+			throw e;
+		}
 	}
 	
 	private MultiValueMap<String, String> getRouteParams(String routeId) {

@@ -19,8 +19,8 @@ public class Trip implements Serializable {
 	
 	private static final long serialVersionUID = -3015444050776850171L;
 	
-	private int tripId;
-	private int routeId;
+	private String tripId;
+	private String routeId;
 	private String routeCombinedId;
 	private String routeCode;
 	private String carrier;
@@ -70,19 +70,19 @@ public class Trip implements Serializable {
 	
 	private Map<Lang, List<ReturnRule>> returnRules;
 
-	public int getTripId() {
+	public String getTripId() {
 		return tripId;
 	}
 
-	public void setTripId(int tripId) {
+	public void setTripId(String tripId) {
 		this.tripId = tripId;
 	}
 
-	public int getRouteId() {
+	public String getRouteId() {
 		return routeId;
 	}
 
-	public void setRouteId(int routeId) {
+	public void setRouteId(String routeId) {
 		this.routeId = routeId;
 	}
 

@@ -114,7 +114,7 @@ public class OrderServiceController extends AbstractOrderService {
 				serviceItem.setPrice(createPrice(ticket));
 				serviceItem.setSeat(createSeat(ticket));
 				
-				TripIdModel id = new TripIdModel(tickets.getKey(), 0, String.valueOf(ticket.getGeoLocalityFrom()),
+				TripIdModel id = new TripIdModel(tickets.getKey(), null, String.valueOf(ticket.getGeoLocalityFrom()),
 						String.valueOf(ticket.getGeoLocalityTo()), ticket.getDepartAt(), ticket.getCurrency());
 				Trip trip = search.getTripFromCache(id.asString());
 				if (trip != null) {
