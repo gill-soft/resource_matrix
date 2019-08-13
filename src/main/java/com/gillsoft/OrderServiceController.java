@@ -69,8 +69,10 @@ public class OrderServiceController extends AbstractOrderService {
 						request.getCustomers(), item.getValue());
 				List<String> tickets = new ArrayList<>();
 				idModel.getIds().put(order.getHash(), tickets);
-				for (Ticket ticket : order.getTickets().get(item.getKey())) {
-					tickets.add(ticket.getHash());
+				for (List<Ticket> orderTickets : order.getTickets().values()) {
+					for (Ticket ticket : orderTickets) {
+						tickets.add(ticket.getHash());
+					}
 				}
 				addOrder(response, order, getOrderCustomers(item.getValue(), request.getCustomers()));
 				request.getCustomers().forEach((key, value) -> value.setId(null));
