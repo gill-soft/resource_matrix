@@ -133,7 +133,6 @@ public class OrderServiceController extends AbstractOrderService {
 						if (Objects.equals(customer.getName(), ticket.getPassName())
 								&& Objects.equals(customer.getSurname(), ticket.getPassSurname())) {
 							serviceItem.setCustomer(new Customer(customer.getId()));
-							customers.remove(customer);
 							break;
 						}
 					}
