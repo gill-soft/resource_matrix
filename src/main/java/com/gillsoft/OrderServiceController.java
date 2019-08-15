@@ -214,7 +214,7 @@ public class OrderServiceController extends AbstractOrderService {
 			commission.setName(fee.getName());
 			commission.setValue(calcReturn ? fee.getReturnAmount() : fee.getAmount());
 			commission.setType(ValueType.FIXED);
-			commission.setValueCalcType(CalcType.IN);
+			commission.setValueCalcType(CalcType.FROM);
 			commissions.add(commission);
 		}
 		price.setCommissions(commissions);
