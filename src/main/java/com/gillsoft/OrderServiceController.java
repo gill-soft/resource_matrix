@@ -531,6 +531,9 @@ public class OrderServiceController extends AbstractOrderService {
 					documents.add(document);
 				}
 			} catch (ResponseError e) {
+				if (response.getServices() == null) {
+					response.setServices(new ArrayList<>());
+				}
 				for (String ticketId : idModel.getIds().get(id)) {
 					addServiceItem(response.getServices(), id, ticketId, null, new RestError(e.getMessage()));
 				}

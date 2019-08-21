@@ -388,11 +388,11 @@ public class RestClient {
 			try {
 				InputStream in = response.getBody().getInputStream();
 				ByteArrayOutputStream out = new ByteArrayOutputStream();
-				checkError(out.toByteArray());
 				byte[] buffer = new byte[256];
 				while (in.read(buffer) != -1) {
 					out.write(buffer);
 				}
+				checkError(out.toByteArray());
 				return StringUtil.toBase64(out.toByteArray());
 			} catch (IOException e) {
 				throw new ResponseError(e.getMessage());
