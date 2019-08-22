@@ -173,7 +173,10 @@ public class SearchServiceController extends SimpleAbstractTripSearchService<Sim
 		segment.setArrivalDate(getDate(trip.getArriveDate(), trip.getArriveTime()));
 		segment.setFreeSeatsCount(trip.getFreeSeats().getCount());
 		segment.setTimeInWay(trip.getTimeInWay());
-		
+		if (trip.getFreeSeats() != null
+				&& trip.getFreeSeats().isOpen()) {
+			segment.setCanReserveSeat(true);
+		}
 		segment.setDeparture(createLocality(localities, trip.getDepartCityId(), trip.getDepartStationId(), null, trip.getDepartStation()));
 		segment.setArrival(createLocality(localities, trip.getArriveCityId(), trip.getArriveStationId(), null, trip.getArriveStation()));
 		
