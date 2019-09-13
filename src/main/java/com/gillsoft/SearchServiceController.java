@@ -132,10 +132,7 @@ public class SearchServiceController extends SimpleAbstractTripSearchService<Sim
 		if (!result.isInProgress()) {
 			addResult(vehicles, localities, organisations, segments, containers, result);
 		} else {
-			callables.add(() -> {
-				searchTrips(result);
-				return result;
-			});
+			addInitSearchCallables(callables, result.getRequest());
 		}
 	}
 	
