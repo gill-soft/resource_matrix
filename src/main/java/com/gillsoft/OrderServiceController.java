@@ -10,7 +10,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Objects;
-import java.util.stream.Collectors;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.RestController;
@@ -45,7 +44,6 @@ import com.gillsoft.model.ValueType;
 import com.gillsoft.model.request.OrderRequest;
 import com.gillsoft.model.response.OrderResponse;
 import com.gillsoft.util.RestTemplateUtil;
-import com.gillsoft.util.StringUtil;
 
 @RestController
 public class OrderServiceController extends AbstractOrderService {
@@ -63,10 +61,11 @@ public class OrderServiceController extends AbstractOrderService {
 		OrderResponse response = createResponse(request.getCustomers());
 		
 		OrderIdModel idModel = new OrderIdModel();
-		for (Entry<String, List<ServiceItem>> item : groupeByTripId(request).entrySet()) {
+		for (ServiceItem item : request.getServices()) {
+			TripIdModel tripIdModel = new TripIdModel().create(item.getSegment().getId());
 			try {
-				Order order = client.newOrder(item.getKey(), request.getCurrency(),
-						request.getCustomers(), item.getValue());
+				Order order = client.newOrder(tripIdModel.getIntervalId(), request.getCurrency(),
+						request.getCustomers(), item);
 				List<String> tickets = new ArrayList<>();
 				idModel.getIds().put(order.getHash(), tickets);
 				for (List<Ticket> orderTickets : order.getTickets().values()) {
@@ -74,13 +73,11 @@ public class OrderServiceController extends AbstractOrderService {
 						tickets.add(ticket.getHash());
 					}
 				}
-				addOrder(response, order, getOrderCustomers(item.getValue(), request.getCustomers()));
+				addOrder(response, order, item.getCustomer());
 				request.getCustomers().forEach((key, value) -> value.setId(null));
 			} catch (ResponseError e) {
-				for (ServiceItem serviceItem : item.getValue()) {
-					serviceItem.setError(new RestError(e.getMessage()));
-					response.getServices().add(serviceItem);
-				}
+				item.setError(new RestError(e.getMessage()));
+				response.getServices().add(item);
 			}
 		}
 		response.setOrderId(idModel.asString());
@@ -105,7 +102,7 @@ public class OrderServiceController extends AbstractOrderService {
 		return response;
 	}
 	
-	private void addOrder(OrderResponse response, Order order, List<Customer> customers) {
+	private void addOrder(OrderResponse response, Order order, Customer customer) {
 		for (Entry<String, List<Ticket>> tickets : order.getTickets().entrySet()) {
 			for (Ticket ticket : tickets.getValue()) {
 				ServiceItem serviceItem = new ServiceItem();
@@ -128,22 +125,7 @@ public class OrderServiceController extends AbstractOrderService {
 				addSegment(key, response.getLocalities(), response.getOrganisations(), response.getSegments(), ticket);
 				
 				// добовляем пассажира
-				if (customers != null) {
-					for (Customer customer : customers) {
-						if (Objects.equals(customer.getName(), ticket.getPassName())
-								&& Objects.equals(customer.getSurname(), ticket.getPassSurname())) {
-							serviceItem.setCustomer(new Customer(customer.getId()));
-							break;
-						}
-					}
-				} else {
-					String uuid = StringUtil.generateUUID();
-					serviceItem.setCustomer(new Customer(uuid));
-					Customer customer = new Customer();
-					customer.setName(ticket.getPassName());
-					customer.setSurname(ticket.getPassSurname());
-					response.getCustomers().put(uuid, customer);
-				}
+				serviceItem.setCustomer(new Customer(customer.getId()));
 				response.getServices().add(serviceItem);
 			}
 		}
@@ -220,26 +202,6 @@ public class OrderServiceController extends AbstractOrderService {
 		price.setCommissions(commissions);
 	}
 	
-	private List<Customer> getOrderCustomers(List<ServiceItem> items, Map<String, Customer> customers) {
-		customers.forEach((key, value) -> value.setId(key));
-		return items.stream().map(item -> customers.get(item.getCustomer().getId())).collect(Collectors.toList());
-	}
-	
-	private Map<String, List<ServiceItem>> groupeByTripId(OrderRequest request) {
-		Map<String, List<ServiceItem>> trips = new HashMap<>();
-		for (ServiceItem item : request.getServices()) {
-			TripIdModel tripIdModel = new TripIdModel().create(item.getSegment().getId());
-			String tripId = tripIdModel.getIntervalId();
-			List<ServiceItem> items = trips.get(tripId);
-			if (items == null) {
-				items = new ArrayList<>();
-				trips.put(tripId, items);
-			}
-			items.add(item);
-		}
-		return trips;
-	}
-
 	@Override
 	public OrderResponse addServicesResponse(OrderRequest request) {
 		throw RestTemplateUtil.createUnavailableMethod();

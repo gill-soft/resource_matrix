@@ -241,27 +241,20 @@ public class RestClient {
 	}
 	
 	public Order newOrder(String intervalId, Currency currency, Map<String, Customer> customers,
-			List<ServiceItem> services) throws ResponseError {
+			ServiceItem service) throws ResponseError {
 		MultiValueMap<String, String> params = createLoginParams(null);
 		params.add("interval_id[0]", intervalId);
 		params.add("currency", getCurrency(currency));
 		params.add("with_fees", "1");
-		boolean contactsAdded = false;
-		for (int i = 0; i < services.size(); i++) {
-			ServiceItem service = services.get(i);
-			Customer customer = customers.get(service.getCustomer().getId());
-			if (!contactsAdded) {
-				params.add("email", customer.getEmail());
-				params.add("phone", customer.getPhone());
-				contactsAdded = true;
-			}
-			params.add("name[" + i + "]", customer.getName());
-			params.add("surname[" + i + "]", customer.getSurname());
-			if (!Objects.equals("0", service.getPrice().getTariff().getId())) {
-				params.add("discount_id[0][" + i + "]", service.getPrice().getTariff().getId());
-			}
-			params.add("seat[0][" + i + "]", service.getSeat().getId());
+		Customer customer = customers.get(service.getCustomer().getId());
+		params.add("email", customer.getEmail());
+		params.add("phone", customer.getPhone());
+		params.add("name[0]", customer.getName());
+		params.add("surname[0]", customer.getSurname());
+		if (!Objects.equals("0", service.getPrice().getTariff().getId())) {
+			params.add("discount_id[0][0]", service.getPrice().getTariff().getId());
 		}
+		params.add("seat[0][0]", service.getSeat().getId());
 		return sendRequest(template, NEW_ORDER, HttpMethod.POST, null, params,
 				new ParameterizedTypeReference<Response<Order>>() {}).getData();
 	}
