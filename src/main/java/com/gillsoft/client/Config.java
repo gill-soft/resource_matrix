@@ -35,6 +35,10 @@ public class Config {
 	public static String getScheduleUrl() {
 		return properties.getProperty("schedule.url");
 	}
+	
+	public static String getCurrency() {
+		return properties.getProperty("currency");
+	}
 
 	public static int getRequestTimeout() {
 		return Integer.valueOf(properties.getProperty("request.timeout"));

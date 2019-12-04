@@ -64,8 +64,7 @@ public class OrderServiceController extends AbstractOrderService {
 		for (ServiceItem item : request.getServices()) {
 			TripIdModel tripIdModel = new TripIdModel().create(item.getSegment().getId());
 			try {
-				Order order = client.newOrder(tripIdModel.getIntervalId(), request.getCurrency(),
-						request.getCustomers(), item);
+				Order order = client.newOrder(tripIdModel.getIntervalId(), request.getCustomers(), item);
 				List<String> tickets = new ArrayList<>();
 				idModel.getIds().put(order.getHash(), tickets);
 				for (List<Ticket> orderTickets : order.getTickets().values()) {
@@ -114,11 +113,11 @@ public class OrderServiceController extends AbstractOrderService {
 				serviceItem.setSeat(createSeat(ticket));
 				
 				TripIdModel id = new TripIdModel(tickets.getKey(), null, String.valueOf(ticket.getGeoLocalityFrom()),
-						String.valueOf(ticket.getGeoLocalityTo()), ticket.getDepartAt(), ticket.getCurrency());
+						String.valueOf(ticket.getGeoLocalityTo()), ticket.getDepartAt());
 				Trip trip = search.getTripFromCache(id.asString());
 				if (trip != null) {
 					id = new TripIdModel(tickets.getKey(), trip.getRouteId(), String.valueOf(trip.getDepartCityId()),
-							String.valueOf(trip.getArriveCityId()), trip.getDepartDate(), trip.getCurrency());
+							String.valueOf(trip.getArriveCityId()), trip.getDepartDate());
 				}
 				String key = id.asString();
 				serviceItem.setSegment(new Segment(key));

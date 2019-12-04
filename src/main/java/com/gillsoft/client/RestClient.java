@@ -9,12 +9,10 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Date;
 import java.util.HashMap;
-import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Objects;
-import java.util.Set;
 import java.util.stream.Collectors;
 
 import org.springframework.beans.factory.annotation.Autowired;
@@ -42,7 +40,6 @@ import com.gillsoft.cache.CacheHandler;
 import com.gillsoft.cache.IOCacheException;
 import com.gillsoft.cache.RedisMemoryCache;
 import com.gillsoft.logging.SimpleRequestResponseLoggingInterceptor;
-import com.gillsoft.model.Currency;
 import com.gillsoft.model.Customer;
 import com.gillsoft.model.ServiceItem;
 import com.gillsoft.model.response.ScheduleResponse;
@@ -68,7 +65,6 @@ public class RestClient {
 	public static final String STATUS_RETURNED = "returned";
 	
 	private static final String PING = "/get/ping";
-	private static final String CURRENCIES = "/get/currency-list";
 	private static final String CITIES = "/get/cities";
 	private static final String TRIPS = "/get/trips";
 	private static final String RULES = "/get/trip/return-rules";
@@ -134,8 +130,8 @@ public class RestClient {
 		}
 	}
 	
-	public List<Trip> getTrips(String departLocality, String arriveLocality, Date departDate, String currency) throws ResponseError {
-		return getTrips(getTripSearchParams(departLocality, arriveLocality, departDate, currency));
+	public List<Trip> getTrips(String departLocality, String arriveLocality, Date departDate) throws ResponseError {
+		return getTrips(getTripSearchParams(departLocality, arriveLocality, departDate));
 	}
 	
 	public List<Trip> getTrips(MultiValueMap<String, String> params) throws ResponseError {
@@ -144,39 +140,20 @@ public class RestClient {
 	}
 	
 	private MultiValueMap<String, String> getTripSearchParams(String departLocality, String arriveLocality,
-			Date departDate, String currency) throws ResponseError {
+			Date departDate) throws ResponseError {
 		MultiValueMap<String, String> params = createLoginParams(null);
 		params.add("depart_locality", departLocality);
 		params.add("arrive_locality", arriveLocality);
 		params.add("depart_date", StringUtil.dateFormat.format(departDate));
 		params.add("with_empty_seats", "false");
-		params.add("currency", currency);
+		params.add("currency", Config.getCurrency());
 		params.add("unique_trip", "true");
 		return params;
 	}
 	
-	private Set<String> currencies = new HashSet<>();
-	
-	public String getCurrency(Currency currency) {
-		if (currencies.isEmpty()) {
-			try {
-				currencies.addAll(sendRequest(searchTemplate, CURRENCIES, HttpMethod.GET, null, createLoginParams(DEFAULT_LOCALE),
-						new ParameterizedTypeReference<Response<Map<String, String>>>() {}).getData().keySet());
-			} catch (ResponseError e) {
-			}
-		}
-		if (currency == null) {
-			return null;
-		}
-		if (currencies.contains(currency.toString())) {
-			return currency.toString();
-		}
-		return null;
-	}
-	
-	public List<Trip> getCachedTrips(String departLocality, String arriveLocality, Date departDate, String currency)
+	public List<Trip> getCachedTrips(String departLocality, String arriveLocality, Date departDate)
 			throws IOCacheException, ResponseError {
-		MultiValueMap<String, String> params = getTripSearchParams(departLocality, arriveLocality, departDate, currency);
+		MultiValueMap<String, String> params = getTripSearchParams(departLocality, arriveLocality, departDate);
 		return getCachedObject(getCacheKey(TRIPS_CACHE_KEY, params), new TripsUpdateTask(params));
 	}
 	
@@ -240,11 +217,11 @@ public class RestClient {
 				new ParameterizedTypeReference<Response<List<ReturnRule>>>() {}).getData();
 	}
 	
-	public Order newOrder(String intervalId, Currency currency, Map<String, Customer> customers,
-			ServiceItem service) throws ResponseError {
+	public Order newOrder(String intervalId, Map<String, Customer> customers, ServiceItem service)
+			throws ResponseError {
 		MultiValueMap<String, String> params = createLoginParams(null);
 		params.add("interval_id[0]", intervalId);
-		params.add("currency", getCurrency(currency));
+		params.add("currency", Config.getCurrency());
 		params.add("with_fees", "1");
 		Customer customer = customers.get(service.getCustomer().getId());
 		params.add("email", customer.getEmail());

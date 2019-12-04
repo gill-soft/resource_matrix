@@ -88,7 +88,7 @@ public class SearchServiceController extends SimpleAbstractTripSearchService<Sim
 			TripSearchRequest request = searchPackage.getRequest();
 			
 			List<Trip> trips = client.getCachedTrips(request.getLocalityPairs().get(0)[0], request.getLocalityPairs().get(0)[1],
-					request.getDates().get(0), client.getCurrency(request.getCurrency()));
+					request.getDates().get(0));
 			searchPackage.setSearchResult(new CopyOnWriteArrayList<Trip>());
 			searchPackage.getSearchResult().addAll(trips);
 			for (Trip trip : trips) {
@@ -184,7 +184,7 @@ public class SearchServiceController extends SimpleAbstractTripSearchService<Sim
 		segment.setRoute(createRoute(trip.getRouteInfo(), trip.getRouteId(), localities));
 		
 		TripIdModel id = new TripIdModel(trip.getIntervalId(), trip.getRouteId(), request.getLocalityPairs().get(0)[0],
-				request.getLocalityPairs().get(0)[1], request.getDates().get(0), client.getCurrency(request.getCurrency()));
+				request.getLocalityPairs().get(0)[1], request.getDates().get(0));
 		String key = id.asString();
 		segments.put(key, segment);
 		
@@ -465,8 +465,7 @@ public class SearchServiceController extends SimpleAbstractTripSearchService<Sim
 	public Trip getTripFromCache(String tripId) {
 		TripIdModel idModel = new TripIdModel().create(tripId);
 		try {
-			List<Trip> trips = client.getCachedTrips(idModel.getFrom(), idModel.getTo(),
-					idModel.getDate(), idModel.getCurrency());
+			List<Trip> trips = client.getCachedTrips(idModel.getFrom(), idModel.getTo(), idModel.getDate());
 			for (Trip trip : trips) {
 				if (Objects.equal(trip.getIntervalId(), idModel.getIntervalId())) {
 					return trip;

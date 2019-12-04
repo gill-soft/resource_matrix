@@ -6,7 +6,7 @@ import com.gillsoft.model.AbstractJsonModel;
 
 public class TripIdModel extends AbstractJsonModel {
 
-	private static final long serialVersionUID = 6685617842271023619L;
+	private static final long serialVersionUID = -2255468082184771202L;
 
 	private String intervalId;
 
@@ -18,19 +18,16 @@ public class TripIdModel extends AbstractJsonModel {
 
 	private Date date;
 
-	private String currency;
-
 	public TripIdModel() {
 
 	}
 
-	public TripIdModel(String intervalId, String routeId, String from, String to, Date date, String currency) {
+	public TripIdModel(String intervalId, String routeId, String from, String to, Date date) {
 		this.intervalId = intervalId;
 		this.routeId = routeId;
 		this.from = from;
 		this.to = to;
 		this.date = date;
-		this.currency = currency;
 	}
 
 	public String getIntervalId() {
@@ -71,14 +68,6 @@ public class TripIdModel extends AbstractJsonModel {
 
 	public void setDate(Date date) {
 		this.date = date;
-	}
-
-	public String getCurrency() {
-		return currency;
-	}
-
-	public void setCurrency(String currency) {
-		this.currency = currency;
 	}
 
 	@Override
