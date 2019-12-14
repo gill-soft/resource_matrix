@@ -123,7 +123,7 @@ public class OrderServiceController extends AbstractOrderService {
 				serviceItem.setSegment(new Segment(key));
 				addSegment(key, response.getLocalities(), response.getOrganisations(), response.getSegments(), ticket);
 				
-				// добовляем пассажира
+				// добавляем пассажира
 				serviceItem.setCustomer(new Customer(customer.getId()));
 				response.getServices().add(serviceItem);
 			}

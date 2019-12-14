@@ -63,7 +63,7 @@ public class SearchServiceController extends SimpleAbstractTripSearchService<Sim
 	private RestClient client;
 	
 	@Autowired
-	@Qualifier("MemoryCacheHandler")
+	@Qualifier("RedisMemoryCache")
 	private CacheHandler cache;
 
 	@Override
@@ -439,9 +439,15 @@ public class SearchServiceController extends SimpleAbstractTripSearchService<Sim
 
 	@Override
 	public List<RequiredField> getRequiredFieldsResponse(String tripId) {
+		List<RequiredField> fields = new ArrayList<>();
+		fields.add(RequiredField.NAME);
+		fields.add(RequiredField.SURNAME);
+		fields.add(RequiredField.SEAT);
+		fields.add(RequiredField.TARIFF);
+		fields.add(RequiredField.EMAIL);
+		fields.add(RequiredField.PHONE);
 		Trip trip = getTripFromCache(tripId);
 		if (trip != null) {
-			List<RequiredField> fields = new ArrayList<>();
 			for (Entry<String, Boolean> field : trip.getDocFields().entrySet()) {
 				if (field.getValue()) {
 					RequiredField required = getRequiredField(field.getKey());
@@ -453,13 +459,8 @@ public class SearchServiceController extends SimpleAbstractTripSearchService<Sim
 			if (trip.isInternational()) {
 				fields.add(RequiredField.ONLY_LATIN);
 			}
-			fields.add(RequiredField.SEAT);
-			fields.add(RequiredField.TARIFF);
-			fields.add(RequiredField.EMAIL);
-			fields.add(RequiredField.PHONE);
-			return fields;
 		}
-		return null;
+		return fields;
 	}
 	
 	public Trip getTripFromCache(String tripId) {
