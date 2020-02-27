@@ -3,6 +3,7 @@ package com.gillsoft;
 import java.math.BigDecimal;
 import java.text.ParseException;
 import java.util.ArrayList;
+import java.util.Calendar;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
@@ -11,6 +12,7 @@ import java.util.Map.Entry;
 import java.util.concurrent.Callable;
 import java.util.concurrent.CopyOnWriteArrayList;
 
+import org.apache.commons.lang.time.DateUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.web.bind.annotation.RestController;
@@ -277,11 +279,22 @@ public class SearchServiceController extends SimpleAbstractTripSearchService<Sim
 		} catch (Exception e) {
 		}
 		List<RoutePoint> path = new ArrayList<>(routeInfo.getRoute().getPath().size());
+		int daysInWay = 0;
+		Calendar start = null;
 		for (PathPoint point : routeInfo.getRoute().getPath()) {
+			if (start != null) {
+				Calendar arrival = getDate(point.getArriveTime(), daysInWay);
+				Calendar departure = getDate(point.getDepartTime(), daysInWay);
+				if (start.after(arrival)
+						&& departure.compareTo(start) != 0) {
+					daysInWay++;
+				}
+			}
+			start = getDate(point.getDepartTime(), daysInWay);
 			RoutePoint routePoint = new RoutePoint();
+			routePoint.setArrivalDay(daysInWay);
 			routePoint.setDistance(point.getDistance());
 			routePoint.setPlatform(point.getPlatform());
-			routePoint.setArrivalDay(point.getArriveDay());
 			routePoint.setDepartureTime(point.getDepartTime());
 			routePoint.setArrivalTime(point.getArriveTime());
 			if (point.isDockingPoint()) {
@@ -293,6 +306,18 @@ public class SearchServiceController extends SimpleAbstractTripSearchService<Sim
 		}
 		route.setPath(path);
 		return route;
+	}
+	
+	private Calendar getDate(String time, int addedDays) {
+		Calendar start = DateUtils.truncate(Calendar.getInstance(), Calendar.DATE);
+		start.add(Calendar.DATE, addedDays);
+		try {
+			String[] times = time.split(":");
+			start.set(Calendar.HOUR_OF_DAY, Integer.parseInt(times[0]));
+			start.set(Calendar.MINUTE, Integer.parseInt(times[1]));
+		} catch (Exception e) {
+		}
+		return start;
 	}
 	
 	private Locality createRouteLocality(Map<String, Locality> localities, Point point, int parentId) {
