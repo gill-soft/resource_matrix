@@ -200,7 +200,7 @@ public class SearchServiceController extends SimpleAbstractTripSearchService<Sim
 	}
 	
 	public Locality createLocality(Map<String, Locality> localities, int parentId, int id, String name, String address) {
-		String key = String.valueOf(id);
+		String key = "st_" + id;
 		Locality station = new Locality();
 		station.setName(name);
 		station.setAddress(address);
@@ -296,9 +296,9 @@ public class SearchServiceController extends SimpleAbstractTripSearchService<Sim
 	}
 	
 	private Locality createRouteLocality(Map<String, Locality> localities, Point point, int parentId) {
-		String key = String.valueOf(point.getId());
+		String key = "st_" + point.getId();
 		Locality station = new Locality();
-		station.setId(String.valueOf(point.getId()));
+		station.setId(key);
 		station.setLatitude(point.getLatitude());
 		station.setLongitude(point.getLongitude());
 		for (Entry<String, Parameters> entry : point.getI18n().entrySet()) {
