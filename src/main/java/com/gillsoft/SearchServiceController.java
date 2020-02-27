@@ -435,31 +435,49 @@ public class SearchServiceController extends SimpleAbstractTripSearchService<Sim
 		if (trip != null) {
 			List<Tariff> tariffs = new ArrayList<>();
 			for (Discount discount : trip.getDiscounts()) {
-				Tariff tariff = new Tariff();
-				tariff.setId(String.valueOf(discount.getId()));
-				tariff.setMinAge(discount.getLimitFrom());
-				tariff.setMaxAge(discount.getLimitTo());
-				tariff.setCode(discount.getKind());
-				for (Lang lang : Lang.values()) {
-					Parameters parameters = discount.getI18n().get(lang.toString().toLowerCase());
-					if (parameters != null) {
-						tariff.setName(lang, parameters.getName());
-						tariff.setDescription(lang, parameters.getDescription());
+				if (!isPresentLoyalty(discount)) {
+					Tariff tariff = new Tariff();
+					tariff.setId(String.valueOf(discount.getId()));
+					tariff.setMinAge(discount.getLimitFrom());
+					tariff.setMaxAge(discount.getLimitTo());
+					tariff.setCode(discount.getKind());
+					for (Lang lang : Lang.values()) {
+						Parameters parameters = discount.getI18n().get(lang.toString().toLowerCase());
+						if (parameters != null) {
+							tariff.setName(lang, parameters.getName());
+							tariff.setDescription(lang, parameters.getDescription());
+						}
 					}
+					tariff.setValue(trip.getTariff()
+							.multiply(new BigDecimal(100).subtract(discount.getValue())
+									.multiply(new BigDecimal("0.01"))));
+					tariffs.add(tariff);
 				}
-				tariff.setValue(trip.getTariff()
-						.multiply(new BigDecimal(100).subtract(discount.getValue())
-								.multiply(new BigDecimal("0.01"))));
-				tariffs.add(tariff);
 			}
-			Tariff tariff = new Tariff();
-			tariff.setId("0");
-			tariff.setCode("base");
-			tariff.setValue(trip.getTariff());
-			tariffs.add(tariff);
+			tariffs.add(createBaseTariff(trip.getTariff()));
 			return tariffs;
 		}
 		return null;
+	}
+	
+	private boolean isPresentLoyalty(Discount discount) {
+		for (Lang lang : Lang.values()) {
+			Parameters parameters = discount.getI18n().get(lang.toString().toLowerCase());
+			if (parameters != null
+					&& parameters.getName().toLowerCase().contains("карт")
+					&& parameters.getName().toLowerCase().contains("лояльн")) {
+				return true;
+			}
+		}
+		return false;
+	}
+	
+	private Tariff createBaseTariff(BigDecimal value) {
+		Tariff tariff = new Tariff();
+		tariff.setId("0");
+		tariff.setCode("base");
+		tariff.setValue(value);
+		return tariff;
 	}
 
 	@Override
