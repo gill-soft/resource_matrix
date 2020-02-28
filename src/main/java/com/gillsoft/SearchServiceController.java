@@ -172,11 +172,7 @@ public class SearchServiceController extends SimpleAbstractTripSearchService<Sim
 		segment.setArrivalDate(getDate(trip.getArriveDate(), trip.getArriveTime()));
 		segment.setFreeSeatsCount(trip.getFreeSeats().getCount());
 		segment.setTimeInWay(trip.getTimeInWay());
-		if (trip.getFreeSeats() != null) {
-			segment.setCanReserveSeat(trip.getFreeSeats().isOpen());
-		} else {
-			segment.setCanReserveSeat(false);
-		}
+		segment.setCanReserveSeat(isOpenSeats(trip));
 		segment.setDeparture(createLocality(localities, trip.getDepartCityId(), trip.getDepartStationId(), null, trip.getDepartStation()));
 		segment.setArrival(createLocality(localities, trip.getArriveCityId(), trip.getArriveStationId(), null, trip.getArriveStation()));
 		
@@ -192,6 +188,10 @@ public class SearchServiceController extends SimpleAbstractTripSearchService<Sim
 		segments.put(key, segment);
 		
 		return key;
+	}
+	
+	private boolean isOpenSeats(Trip trip) {
+		return trip.getFreeSeats() != null && trip.getFreeSeats().isOpen();
 	}
 	
 	private Date getDate(Date date, String time) {
