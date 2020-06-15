@@ -65,7 +65,7 @@ public class SearchServiceController extends SimpleAbstractTripSearchService<Sim
 	private RestClient client;
 	
 	@Autowired
-	@Qualifier("RedisMemoryCache")
+	@Qualifier("MemoryCacheHandler")
 	private CacheHandler cache;
 
 	@Override
@@ -93,27 +93,27 @@ public class SearchServiceController extends SimpleAbstractTripSearchService<Sim
 					request.getDates().get(0));
 			searchPackage.setSearchResult(new CopyOnWriteArrayList<Trip>());
 			searchPackage.getSearchResult().addAll(trips);
-			for (Trip trip : trips) {
-				if (trip.getRouteInfo() == null) {
-					try {
-						trip.setRouteInfo(client.getCachedRoute(String.valueOf(trip.getRouteId())));
-					} catch (IOCacheException e) {
-						searchPackage.setInProgress(true);
-					} catch (ResponseError e) {
-					}
-				}
-				if (trip.getReturnRules() == null) {
-					for (Lang lang : Lang.values()) {
-						try {
-							trip.addReturnRules(lang, client.getCachedReturnRules(trip.getIntervalId(),
-									lang.toString().toLowerCase(), getDate(trip.getDepartDate(), trip.getDepartTime())));
-						} catch (IOCacheException e) {
-							searchPackage.setInProgress(true);
-						} catch (ResponseError e) {
-						}
-					}
-				}
-			}
+//			for (Trip trip : trips) {
+//				if (trip.getRouteInfo() == null) {
+//					try {
+//						trip.setRouteInfo(client.getCachedRoute(String.valueOf(trip.getRouteId())));
+//					} catch (IOCacheException e) {
+//						searchPackage.setInProgress(true);
+//					} catch (ResponseError e) {
+//					}
+//				}
+//				if (trip.getReturnRules() == null) {
+//					for (Lang lang : Lang.values()) {
+//						try {
+//							trip.addReturnRules(lang, client.getCachedReturnRules(trip.getIntervalId(),
+//									lang.toString().toLowerCase(), getDate(trip.getDepartDate(), trip.getDepartTime())));
+//						} catch (IOCacheException e) {
+//							searchPackage.setInProgress(true);
+//						} catch (ResponseError e) {
+//						}
+//					}
+//				}
+//			}
 		} catch (IOCacheException e) {
 			searchPackage.setInProgress(true);
 		} catch (ResponseError e) {
@@ -147,14 +147,14 @@ public class SearchServiceController extends SimpleAbstractTripSearchService<Sim
 			List<com.gillsoft.model.Trip> trips = new ArrayList<>();
 			for (int i = result.getSearchResult().size() - 1; i >= 0; i--) {
 				Trip trip = result.getSearchResult().get(i);
-				if (trip.getRouteInfo() != null) {
+//				if (trip.getRouteInfo() != null) {
 					
 					com.gillsoft.model.Trip resTrip = new com.gillsoft.model.Trip();
 					resTrip.setId(addSegment(vehicles, localities, organisations, segments, trip, result.getRequest()));
 					trips.add(resTrip);
 					
 					result.getSearchResult().remove(i);
-				}
+//				}
 			}
 			container.setTrips(trips);
 		}
@@ -347,12 +347,18 @@ public class SearchServiceController extends SimpleAbstractTripSearchService<Sim
 	@Override
 	public Route getRouteResponse(String tripId) {
 		TripIdModel idModel = new TripIdModel().create(tripId);
+		String routeId = String.valueOf(idModel.getRouteId());
+		RouteInfo route = null;
 		try {
-			RouteInfo route = client.getCachedRoute(String.valueOf(idModel.getRouteId()));
-			return createRoute(route, idModel.getRouteId(), null);
+			route = client.getCachedRoute(routeId);
 		} catch (IOCacheException | ResponseError e) {
-			throw new RestClientException(e.getMessage());
+			try {
+				route = client.getRoute(routeId);
+			} catch (ResponseError e1) {
+				throw new RestClientException(e1.getMessage());
+			}
 		}
+		return createRoute(route, idModel.getRouteId(), null);
 	}
 
 	@Override
@@ -543,9 +549,12 @@ public class SearchServiceController extends SimpleAbstractTripSearchService<Sim
 		for (Lang lang : Lang.values()) {
 			try {
 				rules.put(lang, client.getCachedReturnRules(intervalId, lang.toString().toLowerCase(), null));
-			} catch (IOCacheException e) {
-			} catch (ResponseError e) {
-				exception = new RestClientException(e.getMessage());
+			} catch (IOCacheException | ResponseError e) {
+				try {
+					rules.put(lang, client.getReturnRules(intervalId, lang.toString().toLowerCase()));
+				} catch (ResponseError e1) {
+					exception = new RestClientException(e.getMessage());
+				}
 			}
 		}
 		if (!rules.isEmpty()) {
