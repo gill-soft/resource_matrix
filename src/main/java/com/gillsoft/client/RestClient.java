@@ -188,12 +188,12 @@ public class RestClient {
 	}
 	
 	public Map<String, String> getFreeSeats(String intervalId) throws ResponseError {
-		return sendRequest(searchTemplate, FREE_SEATS, HttpMethod.POST, null, getIntervalParams(intervalId, null),
+		return sendRequest(template, FREE_SEATS, HttpMethod.POST, null, getIntervalParams(intervalId, null),
 				new ParameterizedTypeReference<Response<Map<String, String>>>() {}).getData();
 	}
 	
 	public List<List<Seat>> getSeatsMap(String intervalId) throws ResponseError {
-		return sendRequest(searchTemplate, SEATS_MAP, HttpMethod.POST, null, getIntervalParams(intervalId, null),
+		return sendRequest(template, SEATS_MAP, HttpMethod.POST, null, getIntervalParams(intervalId, null),
 				new ParameterizedTypeReference<Response<List<List<Seat>>>>() {}).getData();
 	}
 	
