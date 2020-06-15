@@ -65,7 +65,7 @@ public class SearchServiceController extends SimpleAbstractTripSearchService<Sim
 	private RestClient client;
 	
 	@Autowired
-	@Qualifier("MemoryCacheHandler")
+	@Qualifier("RedisMemoryCache")
 	private CacheHandler cache;
 
 	@Override
@@ -93,27 +93,27 @@ public class SearchServiceController extends SimpleAbstractTripSearchService<Sim
 					request.getDates().get(0));
 			searchPackage.setSearchResult(new CopyOnWriteArrayList<Trip>());
 			searchPackage.getSearchResult().addAll(trips);
-//			for (Trip trip : trips) {
-//				if (trip.getRouteInfo() == null) {
-//					try {
-//						trip.setRouteInfo(client.getCachedRoute(String.valueOf(trip.getRouteId())));
-//					} catch (IOCacheException e) {
-//						searchPackage.setInProgress(true);
-//					} catch (ResponseError e) {
-//					}
-//				}
-//				if (trip.getReturnRules() == null) {
-//					for (Lang lang : Lang.values()) {
-//						try {
-//							trip.addReturnRules(lang, client.getCachedReturnRules(trip.getIntervalId(),
-//									lang.toString().toLowerCase(), getDate(trip.getDepartDate(), trip.getDepartTime())));
-//						} catch (IOCacheException e) {
-//							searchPackage.setInProgress(true);
-//						} catch (ResponseError e) {
-//						}
-//					}
-//				}
-//			}
+			for (Trip trip : trips) {
+				if (trip.getRouteInfo() == null) {
+					try {
+						trip.setRouteInfo(client.getCachedRoute(String.valueOf(trip.getRouteId())));
+					} catch (IOCacheException e) {
+						searchPackage.setInProgress(true);
+					} catch (ResponseError e) {
+					}
+				}
+				if (trip.getReturnRules() == null) {
+					for (Lang lang : Lang.values()) {
+						try {
+							trip.addReturnRules(lang, client.getCachedReturnRules(trip.getIntervalId(),
+									lang.toString().toLowerCase(), getDate(trip.getDepartDate(), trip.getDepartTime())));
+						} catch (IOCacheException e) {
+							searchPackage.setInProgress(true);
+						} catch (ResponseError e) {
+						}
+					}
+				}
+			}
 		} catch (IOCacheException e) {
 			searchPackage.setInProgress(true);
 		} catch (ResponseError e) {
