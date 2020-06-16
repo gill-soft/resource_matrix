@@ -10,7 +10,6 @@ import com.gillsoft.model.Method;
 import com.gillsoft.model.MethodType;
 import com.gillsoft.model.Ping;
 import com.gillsoft.model.Resource;
-import com.gillsoft.util.StringUtil;
 
 @RestController
 public class ResourceServiceController extends AbstractResourceService {
@@ -60,7 +59,7 @@ public class ResourceServiceController extends AbstractResourceService {
 
 	@Override
 	public Ping pingResponse(String id) {
-		return createPing(StringUtil.generateUUID());
+		return createPing(id);
 	}
 
 }
