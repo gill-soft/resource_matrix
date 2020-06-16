@@ -62,9 +62,9 @@ import com.google.common.base.Objects;
 @RestController
 public class SearchServiceController extends SimpleAbstractTripSearchService<SimpleTripSearchPackage<List<Trip>>> {
 	
-	private static BasePoolType TASK_POOL = new MatrixPoolType("TASK_POOL", 300);
+	private static BasePoolType TASK_POOL = new MatrixPoolType("TASK_POOL", 100);
 	
-	private static BasePoolType SEARCH_POOL = new MatrixPoolType("SEARCH_POOL", 1000);
+	private static BasePoolType SEARCH_POOL = new MatrixPoolType("SEARCH_POOL", 300);
 	
 	@Autowired
 	private RestClient client;
