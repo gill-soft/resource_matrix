@@ -3,11 +3,9 @@ package com.gillsoft;
 import java.util.ArrayList;
 import java.util.List;
 
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.RestController;
 
 import com.gillsoft.abstract_rest_service.AbstractResourceService;
-import com.gillsoft.client.RestClient;
 import com.gillsoft.model.Method;
 import com.gillsoft.model.MethodType;
 import com.gillsoft.model.Ping;
@@ -16,9 +14,6 @@ import com.gillsoft.util.StringUtil;
 
 @RestController
 public class ResourceServiceController extends AbstractResourceService {
-	
-	@Autowired
-	private RestClient client;
 
 	@Override
 	public List<Method> getAvailableMethodsResponse() {
@@ -65,7 +60,7 @@ public class ResourceServiceController extends AbstractResourceService {
 
 	@Override
 	public Ping pingResponse(String id) {
-		return createPing(client.ping() ? id : StringUtil.generateUUID());
+		return createPing(StringUtil.generateUUID());
 	}
 
 }

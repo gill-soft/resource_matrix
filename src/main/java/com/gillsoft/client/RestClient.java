@@ -99,7 +99,7 @@ public class RestClient {
 	
 	public RestTemplate createNewPoolingTemplate(int requestTimeout) {
 		RestTemplate template = new RestTemplate(new BufferingClientHttpRequestFactory(
-				RestTemplateUtil.createPoolingFactory(Config.getUrl(), 300, requestTimeout)));
+				RestTemplateUtil.createPoolingFactory(Config.getUrl(), 1000, requestTimeout)));
 		template.setInterceptors(Collections.singletonList(
 				new SimpleRequestResponseLoggingInterceptor()));
 		template.setErrorHandler(new RestTemplateResponseErrorHandler());
