@@ -31,6 +31,7 @@ import com.gillsoft.client.ReturnRule;
 import com.gillsoft.client.RouteInfo;
 import com.gillsoft.client.Trip;
 import com.gillsoft.client.TripIdModel;
+import com.gillsoft.concurrent.BasePoolType;
 import com.gillsoft.model.Currency;
 import com.gillsoft.model.Document;
 import com.gillsoft.model.Lang;
@@ -61,11 +62,15 @@ import com.google.common.base.Objects;
 @RestController
 public class SearchServiceController extends SimpleAbstractTripSearchService<SimpleTripSearchPackage<List<Trip>>> {
 	
+	private static BasePoolType TASK_POOL = new MatrixPoolType("TASK_POOL", 300);
+	
+	private static BasePoolType SEARCH_POOL = new MatrixPoolType("SEARCH_POOL", 1000);
+	
 	@Autowired
 	private RestClient client;
 	
 	@Autowired
-	@Qualifier("MemoryCacheHandler")
+	@Qualifier("RedisMemoryCache")
 	private CacheHandler cache;
 
 	@Override
@@ -604,6 +609,16 @@ public class SearchServiceController extends SimpleAbstractTripSearchService<Sim
 	@Override
 	public List<Document> getDocumentsResponse(String tripId) {
 		throw RestTemplateUtil.createUnavailableMethod();
+	}
+	
+	@Override
+	public BasePoolType getTaskPool() {
+		return TASK_POOL;
+	}
+	
+	@Override
+	public BasePoolType getSearchPool() {
+		return SEARCH_POOL;
 	}
 
 }
