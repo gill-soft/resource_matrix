@@ -93,27 +93,27 @@ public class SearchServiceController extends SimpleAbstractTripSearchService<Sim
 					request.getDates().get(0));
 			searchPackage.setSearchResult(new CopyOnWriteArrayList<Trip>());
 			searchPackage.getSearchResult().addAll(trips);
-//			for (Trip trip : trips) {
-//				if (trip.getRouteInfo() == null) {
-//					try {
-//						trip.setRouteInfo(client.getCachedRoute(String.valueOf(trip.getRouteId())));
-//					} catch (IOCacheException e) {
-//						searchPackage.setInProgress(true);
-//					} catch (ResponseError e) {
-//					}
-//				}
-//				if (trip.getReturnRules() == null) {
-//					for (Lang lang : Lang.values()) {
-//						try {
-//							trip.addReturnRules(lang, client.getCachedReturnRules(trip.getIntervalId(),
-//									lang.toString().toLowerCase(), getDate(trip.getDepartDate(), trip.getDepartTime())));
-//						} catch (IOCacheException e) {
-//							searchPackage.setInProgress(true);
-//						} catch (ResponseError e) {
-//						}
-//					}
-//				}
-//			}
+			for (Trip trip : trips) {
+				if (trip.getRouteInfo() == null) {
+					try {
+						trip.setRouteInfo(client.getCachedRoute(String.valueOf(trip.getRouteId())));
+					} catch (IOCacheException e) {
+						searchPackage.setInProgress(true);
+					} catch (ResponseError e) {
+					}
+				}
+				if (trip.getReturnRules() == null) {
+					for (Lang lang : Lang.values()) {
+						try {
+							trip.addReturnRules(lang, client.getCachedReturnRules(trip.getIntervalId(),
+									lang.toString().toLowerCase(), getDate(trip.getDepartDate(), trip.getDepartTime())));
+						} catch (IOCacheException e) {
+							searchPackage.setInProgress(true);
+						} catch (ResponseError e) {
+						}
+					}
+				}
+			}
 		} catch (IOCacheException e) {
 			searchPackage.setInProgress(true);
 		} catch (ResponseError e) {
@@ -147,14 +147,14 @@ public class SearchServiceController extends SimpleAbstractTripSearchService<Sim
 			List<com.gillsoft.model.Trip> trips = new ArrayList<>();
 			for (int i = result.getSearchResult().size() - 1; i >= 0; i--) {
 				Trip trip = result.getSearchResult().get(i);
-//				if (trip.getRouteInfo() != null) {
+				if (trip.getRouteInfo() != null) {
 					
 					com.gillsoft.model.Trip resTrip = new com.gillsoft.model.Trip();
 					resTrip.setId(addSegment(vehicles, localities, organisations, segments, trip, result.getRequest()));
 					trips.add(resTrip);
 					
 					result.getSearchResult().remove(i);
-//				}
+				}
 			}
 			container.setTrips(trips);
 		}
